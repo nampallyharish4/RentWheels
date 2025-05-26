@@ -7,6 +7,7 @@ A modern web application for managing vehicle rentals, built with React, TypeScr
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+- [Detailed Package Installation](#detailed-package-installation)
 - [Project Structure](#project-structure)
 - [Usage](#usage)
 - [Documentation](#documentation)
