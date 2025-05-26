@@ -14,19 +14,19 @@ interface SignupFormData {
 }
 
 const SignupForm: React.FC = () => {
-  const { signup, isLoading, error } = useAuthStore();
+  const { signup, isLoading, error, user } = useAuthStore();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
   } = useForm<SignupFormData>();
-  
+
   const password = watch('password');
-  
+
   const onSubmit = async (data: SignupFormData) => {
     try {
       await signup(data.email, data.password);
@@ -35,23 +35,28 @@ const SignupForm: React.FC = () => {
       // Error is handled by the store
     }
   };
-  
+
   return (
     <div className="max-w-md mx-auto px-4 sm:px-0">
       <Card className="w-full">
         <CardHeader className="text-center">
-          <h1 className="text-2xl font-bold text-secondary-900">Create Your Account</h1>
+          <h1 className="text-2xl font-bold text-secondary-900">
+            Create Your Account
+          </h1>
           <p className="text-secondary-500 mt-1">Join RentWheels today</p>
         </CardHeader>
-        
+
         <CardContent>
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
-              <AlertCircle className="text-red-500 mr-2 flex-shrink-0 mt-0.5" size={16} />
+              <AlertCircle
+                className="text-red-500 mr-2 flex-shrink-0 mt-0.5"
+                size={16}
+              />
               <span className="text-red-700 text-sm">{error}</span>
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Input
@@ -71,7 +76,7 @@ const SignupForm: React.FC = () => {
                 })}
               />
             </div>
-            
+
             <div>
               <Input
                 id="password"
@@ -90,7 +95,7 @@ const SignupForm: React.FC = () => {
                 })}
               />
             </div>
-            
+
             <div>
               <Input
                 id="confirmPassword"
@@ -102,10 +107,11 @@ const SignupForm: React.FC = () => {
                 fullWidth
                 {...register('confirmPassword', {
                   required: 'Please confirm your password',
-                  validate: (value) => value === password || 'Passwords do not match',
+                  validate: (value) =>
+                    value === password || 'Passwords do not match',
                 })}
               />
-              
+
               <div className="mt-1">
                 <label className="inline-flex items-center cursor-pointer">
                   <input
@@ -115,31 +121,34 @@ const SignupForm: React.FC = () => {
                     onChange={() => setShowPassword(!showPassword)}
                   />
                   <div className="relative w-10 h-5 bg-secondary-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-secondary-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
-                  <span className="ms-2 text-sm font-medium text-secondary-700">Show password</span>
+                  <span className="ms-2 text-sm font-medium text-secondary-700">
+                    Show password
+                  </span>
                 </label>
               </div>
             </div>
-            
+
             <div className="pt-2">
-              <Button
-                type="submit"
-                fullWidth
-                isLoading={isLoading}
-              >
+              <Button type="submit" fullWidth isLoading={isLoading}>
                 Create Account
               </Button>
             </div>
           </form>
         </CardContent>
-        
-        <CardFooter className="text-center">
-          <p className="text-secondary-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
+
+        {!user && (
+          <CardFooter className="text-center">
+            <p className="text-secondary-600">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

@@ -11,9 +11,13 @@ import type { PaymentFormData } from '../../types';
 
 const PaymentForm: React.FC = () => {
   const navigate = useNavigate();
-  const { currentBooking, setPaymentFormData, processPayment } = useBookingStore();
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'debit_card' | 'upi'>('credit_card');
-  
+  const { currentBooking, setPaymentFormData, processPayment } =
+    useBookingStore();
+  const [paymentMethod, setPaymentMethod] = useState<
+    'credit_card' | 'debit_card' | 'upi'
+  >('credit_card');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -23,51 +27,67 @@ const PaymentForm: React.FC = () => {
       paymentMethod: 'credit_card',
     },
   });
-  
+
   if (!currentBooking) {
     navigate('/vehicles');
     return null;
   }
-  
+
   const { startDate, endDate, totalPrice } = currentBooking;
   const startDateObj = new Date(startDate);
   const endDateObj = new Date(endDate);
   const days = Math.max(1, differenceInDays(endDateObj, startDateObj));
-  
+
   const onSubmit = async (data: PaymentFormData) => {
+    setIsProcessingPayment(true);
     try {
       setPaymentFormData({ ...data, paymentMethod });
       await processPayment();
-      navigate('/booking/confirmation');
+      if (currentBooking && currentBooking.id) {
+        navigate(`/booking/confirmation/${currentBooking.id}`);
+      } else {
+        console.error('Booking ID not found after payment processing.');
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Payment processing failed', error);
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-bold text-secondary-900">Payment Details</h2>
+        <h2 className="text-xl font-bold text-secondary-900">
+          Payment Details
+        </h2>
         <p className="text-secondary-600 text-sm">
           Secure payment for your booking
         </p>
       </CardHeader>
-      
+
       <CardContent>
         <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-md flex items-start">
-          <CheckCircle className="text-green-500 mr-2 flex-shrink-0 mt-0.5" size={16} />
+          <CheckCircle
+            className="text-green-500 mr-2 flex-shrink-0 mt-0.5"
+            size={16}
+          />
           <div>
-            <p className="text-green-800 text-sm font-medium">Booking Summary</p>
+            <p className="text-green-800 text-sm font-medium">
+              Booking Summary
+            </p>
             <p className="text-green-700 text-xs mt-1">
-              {format(startDateObj, 'MMM dd, yyyy')} - {format(endDateObj, 'MMM dd, yyyy')}
+              {format(startDateObj, 'MMM dd, yyyy')} -{' '}
+              {format(endDateObj, 'MMM dd, yyyy')}
               <span className="mx-1">•</span>
               {days} {days === 1 ? 'day' : 'days'}
               <span className="mx-1">•</span>
-              Total: ${totalPrice.toFixed(2)}
+              Total: ₹{totalPrice.toFixed(2)}
             </p>
           </div>
         </div>
-        
+
         <div className="mb-6">
           <label className="block text-sm font-medium text-secondary-700 mb-2">
             Payment Method
@@ -81,12 +101,25 @@ const PaymentForm: React.FC = () => {
               }`}
               onClick={() => setPaymentMethod('credit_card')}
             >
-              <CreditCard size={24} className={paymentMethod === 'credit_card' ? 'text-primary-600' : 'text-secondary-400'} />
-              <span className={`text-sm mt-1 ${paymentMethod === 'credit_card' ? 'text-primary-700 font-medium' : 'text-secondary-600'}`}>
+              <CreditCard
+                size={24}
+                className={
+                  paymentMethod === 'credit_card'
+                    ? 'text-primary-600'
+                    : 'text-secondary-400'
+                }
+              />
+              <span
+                className={`text-sm mt-1 ${
+                  paymentMethod === 'credit_card'
+                    ? 'text-primary-700 font-medium'
+                    : 'text-secondary-600'
+                }`}
+              >
                 Credit Card
               </span>
             </div>
-            
+
             <div
               className={`border rounded-md p-3 flex flex-col items-center justify-center cursor-pointer transition-all ${
                 paymentMethod === 'debit_card'
@@ -95,12 +128,25 @@ const PaymentForm: React.FC = () => {
               }`}
               onClick={() => setPaymentMethod('debit_card')}
             >
-              <CreditCard size={24} className={paymentMethod === 'debit_card' ? 'text-primary-600' : 'text-secondary-400'} />
-              <span className={`text-sm mt-1 ${paymentMethod === 'debit_card' ? 'text-primary-700 font-medium' : 'text-secondary-600'}`}>
+              <CreditCard
+                size={24}
+                className={
+                  paymentMethod === 'debit_card'
+                    ? 'text-primary-600'
+                    : 'text-secondary-400'
+                }
+              />
+              <span
+                className={`text-sm mt-1 ${
+                  paymentMethod === 'debit_card'
+                    ? 'text-primary-700 font-medium'
+                    : 'text-secondary-600'
+                }`}
+              >
                 Debit Card
               </span>
             </div>
-            
+
             <div
               className={`border rounded-md p-3 flex flex-col items-center justify-center cursor-pointer transition-all ${
                 paymentMethod === 'upi'
@@ -109,24 +155,35 @@ const PaymentForm: React.FC = () => {
               }`}
               onClick={() => setPaymentMethod('upi')}
             >
-              <svg 
-                viewBox="0 0 24 24" 
-                width="24" 
-                height="24" 
-                className={paymentMethod === 'upi' ? 'text-primary-600' : 'text-secondary-400'}
+              <svg
+                viewBox="0 0 24 24"
+                width="24"
+                height="24"
+                className={
+                  paymentMethod === 'upi'
+                    ? 'text-primary-600'
+                    : 'text-secondary-400'
+                }
                 fill="currentColor"
               >
                 <path d="M7.97 2.1H2.1V7.97H7.97V2.1ZM21.9 2.1H16.03V7.97H21.9V2.1ZM16.03 21.9H21.9V16.03H16.03V21.9ZM7.97 21.9H2.1V16.03H7.97V21.9ZM12 16.68L15.8 9.65H13.57L12.43 12.28C12.3 12.57 12.15 12.94 12 13.33C11.86 12.93 11.7 12.54 11.57 12.26L10.43 9.65H8.2L12 16.68Z" />
               </svg>
-              <span className={`text-sm mt-1 ${paymentMethod === 'upi' ? 'text-primary-700 font-medium' : 'text-secondary-600'}`}>
+              <span
+                className={`text-sm mt-1 ${
+                  paymentMethod === 'upi'
+                    ? 'text-primary-700 font-medium'
+                    : 'text-secondary-600'
+                }`}
+              >
                 UPI
               </span>
             </div>
           </div>
         </div>
-        
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {(paymentMethod === 'credit_card' || paymentMethod === 'debit_card') && (
+          {(paymentMethod === 'credit_card' ||
+            paymentMethod === 'debit_card') && (
             <>
               <div>
                 <Input
@@ -146,7 +203,7 @@ const PaymentForm: React.FC = () => {
                   })}
                 />
               </div>
-              
+
               <div>
                 <Input
                   id="cardHolder"
@@ -159,7 +216,7 @@ const PaymentForm: React.FC = () => {
                   })}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Input
@@ -179,7 +236,7 @@ const PaymentForm: React.FC = () => {
                     })}
                   />
                 </div>
-                
+
                 <div>
                   <Input
                     id="cvv"
@@ -202,7 +259,7 @@ const PaymentForm: React.FC = () => {
               </div>
             </>
           )}
-          
+
           {paymentMethod === 'upi' && (
             <div>
               <Input
@@ -221,19 +278,22 @@ const PaymentForm: React.FC = () => {
               />
             </div>
           )}
-          
+
           <div className="pt-4">
-            <Button type="submit" fullWidth>
-              Pay ${totalPrice.toFixed(2)}
+            <Button type="submit" fullWidth disabled={isProcessingPayment}>
+              {isProcessingPayment
+                ? 'Processing Payment...'
+                : `Pay ₹${totalPrice.toFixed(2)}`}
             </Button>
           </div>
         </form>
       </CardContent>
-      
+
       <CardFooter className="border-t border-secondary-200 bg-secondary-50">
         <div className="flex items-center justify-center w-full text-sm text-secondary-600">
           <Lock size={16} className="mr-1.5 text-secondary-500" />
-          Secured by 256-bit SSL encryption. Your payment information is protected.
+          Secured by 256-bit SSL encryption. Your payment information is
+          protected.
         </div>
       </CardFooter>
     </Card>

@@ -1,7 +1,17 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { MapPin, Calendar, User, Info, Car, Award, Zap, Check, X } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  User,
+  Info,
+  Car,
+  Award,
+  Zap,
+  Check,
+  X,
+} from 'lucide-react';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { useVehicleStore } from '../../store/vehicleStore';
@@ -11,16 +21,17 @@ import { useBookingStore } from '../../store/bookingStore';
 const VehicleDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { selectedVehicle, isLoading, error, fetchVehicleById } = useVehicleStore();
+  const { selectedVehicle, isLoading, error, fetchVehicleById } =
+    useVehicleStore();
   const { user } = useAuthStore();
   const { setVehicleId } = useBookingStore();
-  
+
   React.useEffect(() => {
     if (id) {
       fetchVehicleById(id);
     }
   }, [id, fetchVehicleById]);
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -28,7 +39,7 @@ const VehicleDetails: React.FC = () => {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <Card>
@@ -36,7 +47,9 @@ const VehicleDetails: React.FC = () => {
           <div className="text-red-500 mb-2">
             <X size={48} className="mx-auto" />
           </div>
-          <h3 className="text-xl font-semibold text-secondary-900 mb-2">Error Loading Vehicle</h3>
+          <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+            Error Loading Vehicle
+          </h3>
           <p className="text-secondary-600 mb-4">{error}</p>
           <Button variant="outline" onClick={() => navigate(-1)}>
             Go Back
@@ -45,7 +58,7 @@ const VehicleDetails: React.FC = () => {
       </Card>
     );
   }
-  
+
   if (!selectedVehicle) {
     return (
       <Card>
@@ -53,8 +66,12 @@ const VehicleDetails: React.FC = () => {
           <div className="text-secondary-400 mb-2">
             <Car size={48} className="mx-auto" />
           </div>
-          <h3 className="text-xl font-semibold text-secondary-900 mb-2">Vehicle Not Found</h3>
-          <p className="text-secondary-600 mb-4">The vehicle you're looking for could not be found.</p>
+          <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+            Vehicle Not Found
+          </h3>
+          <p className="text-secondary-600 mb-4">
+            The vehicle you're looking for could not be found.
+          </p>
           <Button variant="outline" onClick={() => navigate('/vehicles')}>
             Browse Vehicles
           </Button>
@@ -62,7 +79,34 @@ const VehicleDetails: React.FC = () => {
       </Card>
     );
   }
-  
+
+  if (selectedVehicle && user && selectedVehicle.ownerId === user.id) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <div className="text-secondary-400 mb-2">
+            <Info size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+            This is Your Vehicle
+          </h3>
+          <p className="text-secondary-600 mb-4">
+            You cannot book your own listed vehicle. You can manage this vehicle
+            from your dashboard.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Button variant="outline" onClick={() => navigate('/vehicles')}>
+              Browse Other Vehicles
+            </Button>
+            <Button onClick={() => navigate('/vehicles/list')}>
+              Manage My Vehicles
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const {
     make,
     model,
@@ -75,17 +119,21 @@ const VehicleDetails: React.FC = () => {
     available,
     createdAt,
   } = selectedVehicle;
-  
+
   const handleRentVehicle = () => {
     if (!user) {
       navigate('/login');
       return;
     }
-    
+
+    if (selectedVehicle.ownerId === user.id) {
+      return;
+    }
+
     setVehicleId(id!);
-    navigate(`/booking/${id}`);
+    navigate(`/book-vehicle/${id}`);
   };
-  
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -93,7 +141,10 @@ const VehicleDetails: React.FC = () => {
         <div className="lg:col-span-2">
           <div className="relative rounded-lg overflow-hidden shadow-md mb-6">
             <img
-              src={imageUrl || 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'}
+              src={
+                imageUrl ||
+                'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'
+              }
               alt={`${make} ${model}`}
               className="w-full h-[400px] object-cover"
             />
@@ -105,7 +156,7 @@ const VehicleDetails: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <Card>
               <CardContent className="p-4">
@@ -132,17 +183,23 @@ const VehicleDetails: React.FC = () => {
                 </div>
                 <div className="flex items-center text-secondary-600 text-sm">
                   <User size={14} className="mr-1" />
-                  <span>Listed on {format(new Date(createdAt), 'MMM dd, yyyy')}</span>
+                  <span>
+                    Listed on {format(new Date(createdAt), 'MMM dd, yyyy')}
+                  </span>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4 flex flex-col h-full">
                 <div className="flex-1">
-                  <div className="text-3xl font-bold text-primary-600 mb-1">${dailyRate}</div>
-                  <div className="text-secondary-600 text-sm mb-4">per day</div>
-                  
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-3xl font-bold text-primary-600 mb-1">
+                      ₹{dailyRate}
+                    </div>
+                    <span className="text-secondary-600">/ day</span>
+                  </div>
+
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-secondary-700">
                       <Check size={18} className="mr-2 text-green-500" />
@@ -158,7 +215,7 @@ const VehicleDetails: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <Button
                   onClick={handleRentVehicle}
                   disabled={!available}
@@ -171,7 +228,7 @@ const VehicleDetails: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           <Card className="mb-8">
             <CardHeader>
               <h3 className="text-xl font-semibold text-secondary-900 flex items-center">
@@ -180,11 +237,13 @@ const VehicleDetails: React.FC = () => {
               </h3>
             </CardHeader>
             <CardContent>
-              <p className="text-secondary-700 whitespace-pre-line">{description}</p>
+              <p className="text-secondary-700 whitespace-pre-line">
+                {description}
+              </p>
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Features and Specifications */}
         <div>
           <Card className="mb-6">
@@ -197,33 +256,51 @@ const VehicleDetails: React.FC = () => {
             <CardContent>
               <ul className="space-y-3">
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>Air Conditioning</span>
                 </li>
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>Power Steering</span>
                 </li>
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>Bluetooth Connectivity</span>
                 </li>
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>USB Charging Ports</span>
                 </li>
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>Navigation System</span>
                 </li>
                 <li className="flex items-center text-secondary-700">
-                  <Check size={18} className="mr-2 text-green-500 flex-shrink-0" />
+                  <Check
+                    size={18}
+                    className="mr-2 text-green-500 flex-shrink-0"
+                  />
                   <span>Backup Camera</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <h3 className="text-xl font-semibold text-secondary-900 flex items-center">
@@ -243,7 +320,7 @@ const VehicleDetails: React.FC = () => {
                     <p className="font-medium text-secondary-900">{model}</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-secondary-500">Year</p>
@@ -251,10 +328,12 @@ const VehicleDetails: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm text-secondary-500">Category</p>
-                    <p className="font-medium text-secondary-900 capitalize">{category}</p>
+                    <p className="font-medium text-secondary-900 capitalize">
+                      {category}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-secondary-500">Fuel Type</p>
@@ -265,7 +344,7 @@ const VehicleDetails: React.FC = () => {
                     <p className="font-medium text-secondary-900">Automatic</p>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-secondary-500">Seats</p>

@@ -27,6 +27,7 @@ export interface Booking {
   paymentId: string | null;
   createdAt: string;
   updatedAt: string;
+  vehicle?: Pick<Vehicle, 'make' | 'model' | 'year' | 'imageUrl'>;
 }
 
 export interface Payment {
