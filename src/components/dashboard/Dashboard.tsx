@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   Car,
   CalendarCheck,
@@ -19,6 +19,7 @@ import { format, differenceInHours, differenceInMilliseconds } from 'date-fns';
 import VehicleCard from '../vehicles/VehicleCard';
 import type { Vehicle, Booking } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import DeleteAccountModal from '../auth/DeleteAccountModal';
 
 const Dashboard: React.FC = () => {
   const { user, profile } = useAuthStore();
@@ -42,6 +43,8 @@ const Dashboard: React.FC = () => {
     useState<Vehicle | null>(null);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
+    useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -159,29 +162,7 @@ const Dashboard: React.FC = () => {
   }, [bookings, now]);
 
   if (!user || !profile) {
-    return (
-      <div className="container mx-auto max-w-6xl px-4 py-12">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle size={48} className="mx-auto text-amber-500 mb-4" />
-            <h2 className="text-2xl font-bold text-secondary-900 mb-2">
-              Authentication Required
-            </h2>
-            <p className="text-secondary-600 mb-6">
-              Please sign in to access your dashboard.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Link to="/login">
-                <Button>Sign In</Button>
-              </Link>
-              <Link to="/signup">
-                <Button variant="outline">Create Account</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   const renderUserVehicleCard = (vehicle: Vehicle) => (
@@ -576,10 +557,16 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end space-x-3">
               <Link to="/profile">
                 <Button variant="outline">Edit Profile</Button>
               </Link>
+              <Button
+                variant="dangerOutline"
+                onClick={() => setIsDeleteAccountModalOpen(true)}
+              >
+                Delete Account
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -598,6 +585,11 @@ const Dashboard: React.FC = () => {
         }
         confirmText="Delete"
         cancelText="Cancel"
+      />
+
+      <DeleteAccountModal
+        isOpen={isDeleteAccountModalOpen}
+        onClose={() => setIsDeleteAccountModalOpen(false)}
       />
     </div>
   );
