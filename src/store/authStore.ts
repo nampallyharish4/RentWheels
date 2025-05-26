@@ -59,11 +59,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`, // Redirect to login page after verification
+        }
       });
 
       if (error) throw error;
 
       if (data.user) {
+        // Check if email confirmation was sent
+        if (data.user.identities && data.user.identities.length === 0) {
+          throw new Error('This email is already registered. Please sign in or reset your password.');
+        }
+
         set({
           user: {
             id: data.user.id,

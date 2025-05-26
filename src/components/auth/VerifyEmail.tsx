@@ -1,12 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardFooter } from '../ui/Card';
 import { useAuthStore } from '../../store/authStore';
+import { supabase } from '../../lib/supabase';
 
 const VerifyEmail: React.FC = () => {
   const { user } = useAuthStore();
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{
+    success?: string;
+    error?: string;
+  }>({});
+
+  const handleResendVerification = async () => {
+    try {
+      setIsResending(true);
+      setResendStatus({});
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user?.email || '',
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (error) throw error;
+
+      setResendStatus({
+        success: 'Verification email has been resent. Please check your inbox.',
+      });
+    } catch (error) {
+      setResendStatus({
+        error: (error as Error).message || 'Failed to resend verification email',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
   
   return (
     <div className="max-w-md mx-auto px-4 sm:px-0">
@@ -27,6 +60,20 @@ const VerifyEmail: React.FC = () => {
               Please check your inbox and click the verification link to complete your registration.
             </p>
             
+            {resendStatus.success && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md flex items-start mb-4 text-left">
+                <CheckCircle className="text-green-600 mr-2 flex-shrink-0 mt-0.5" size={16} />
+                <span className="text-green-800 text-sm">{resendStatus.success}</span>
+              </div>
+            )}
+
+            {resendStatus.error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md flex items-start mb-4 text-left">
+                <AlertCircle className="text-red-600 mr-2 flex-shrink-0 mt-0.5" size={16} />
+                <span className="text-red-800 text-sm">{resendStatus.error}</span>
+              </div>
+            )}
+            
             <div className="p-3 bg-primary-50 border border-primary-200 rounded-md flex items-start mb-6 text-left">
               <CheckCircle className="text-primary-600 mr-2 flex-shrink-0 mt-0.5" size={16} />
               <span className="text-primary-800 text-sm">
@@ -46,6 +93,9 @@ const VerifyEmail: React.FC = () => {
             <Button
               variant="outline"
               fullWidth
+              onClick={handleResendVerification}
+              isLoading={isResending}
+              disabled={isResending}
             >
               Resend Verification Email
             </Button>
