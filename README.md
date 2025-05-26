@@ -62,6 +62,51 @@ Before you begin, ensure you have the following installed:
    npm run dev
    ```
 
+### Detailed Package Installation
+
+If you prefer to install packages individually, here are the specific installation commands:
+
+1. Core Dependencies:
+
+   ```bash
+   # React and TypeScript
+   npm install react@^18.3.1 react-dom@^18.3.1
+   npm install -D @types/react@^18.3.5 @types/react-dom@^18.3.0 typescript@^5.5.3
+
+   # Routing
+   npm install react-router-dom@^6.22.3
+
+   # State Management
+   npm install zustand@^4.5.2
+
+   # Backend/Database
+   npm install @supabase/supabase-js@^2.39.8
+
+   # Form Handling
+   npm install react-hook-form@^7.51.0
+
+   # UI and Styling
+   npm install lucide-react@^0.344.0
+   npm install -D tailwindcss@^3.4.1 postcss@^8.4.35 autoprefixer@^10.4.18
+
+   # Date Handling
+   npm install date-fns@^3.5.0
+   ```
+
+2. Development Dependencies:
+
+   ```bash
+   # Build Tools
+   npm install -D vite@^5.4.2 @vitejs/plugin-react@^4.3.1
+
+   # ESLint and TypeScript
+   npm install -D eslint@^9.9.1 @eslint/js@^9.9.1
+   npm install -D eslint-plugin-react-hooks@^5.1.0-rc.0
+   npm install -D eslint-plugin-react-refresh@^0.4.11
+   npm install -D typescript-eslint@^8.3.0
+   npm install -D globals@^15.9.0
+   ```
+
 ## Project Structure
 
 ```
