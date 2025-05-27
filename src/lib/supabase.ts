@@ -10,14 +10,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-<<<<<<< HEAD
-    autoRefreshToken: true,
-    persistSession: true,
-=======
     persistSession: true,
     autoRefreshToken: true,
     storageKey: 'vehicle-rental-auth',
     storage: window.localStorage,
->>>>>>> 01ba1d84af2f7d324d003f73076d42ee67ffabcc
   },
 });
