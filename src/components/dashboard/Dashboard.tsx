@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   Car,
   CalendarCheck,
@@ -19,6 +19,7 @@ import { format, differenceInHours, differenceInMilliseconds } from 'date-fns';
 import VehicleCard from '../vehicles/VehicleCard';
 import type { Vehicle, Booking } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
+import DeleteAccountModal from '../auth/DeleteAccountModal';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -42,6 +43,8 @@ const Dashboard: React.FC = () => {
     useState<Vehicle | null>(null);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
+    useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -158,6 +161,13 @@ const Dashboard: React.FC = () => {
     });
   }, [bookings, now]);
 
+<<<<<<< HEAD
+=======
+  if (!user || !profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+>>>>>>> 01ba1d84af2f7d324d003f73076d42ee67ffabcc
   const renderUserVehicleCard = (vehicle: Vehicle) => (
     <Card key={vehicle.id} className="overflow-hidden flex flex-col">
       <img
@@ -542,10 +552,16 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-end space-x-3">
               <Link to="/profile">
                 <Button variant="outline">Edit Profile</Button>
               </Link>
+              <Button
+                variant="dangerOutline"
+                onClick={() => setIsDeleteAccountModalOpen(true)}
+              >
+                Delete Account
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -564,6 +580,11 @@ const Dashboard: React.FC = () => {
         }
         confirmText="Delete"
         cancelText="Cancel"
+      />
+
+      <DeleteAccountModal
+        isOpen={isDeleteAccountModalOpen}
+        onClose={() => setIsDeleteAccountModalOpen(false)}
       />
     </div>
   );

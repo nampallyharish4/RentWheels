@@ -11,6 +11,8 @@ interface SignupFormData {
   email: string;
   password: string;
   confirmPassword: string;
+  firstName: string;
+  lastName: string;
 }
 
 const SignupForm: React.FC = () => {
@@ -29,8 +31,14 @@ const SignupForm: React.FC = () => {
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      await signup(data.email, data.password);
-      navigate('/verify-email');
+      const redirectTo = await signup(data.email, data.password, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
+
+      if (redirectTo) {
+        navigate(redirectTo, { state: { fromSignup: true } });
+      }
     } catch (err) {
       // Error is handled by the store
     }
@@ -58,6 +66,33 @@ const SignupForm: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                id="firstName"
+                type="text"
+                label="First Name"
+                leftIcon={<User size={18} />}
+                placeholder="Enter your first name"
+                error={errors.firstName?.message}
+                fullWidth
+                {...register('firstName', {
+                  required: 'First name is required',
+                })}
+              />
+              <Input
+                id="lastName"
+                type="text"
+                label="Last Name"
+                leftIcon={<User size={18} />}
+                placeholder="Enter your last name"
+                error={errors.lastName?.message}
+                fullWidth
+                {...register('lastName', {
+                  required: 'Last name is required',
+                })}
+              />
+            </div>
+
             <div>
               <Input
                 id="email"

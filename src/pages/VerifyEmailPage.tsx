@@ -1,4 +1,5 @@
 import React from 'react';
+<<<<<<< HEAD
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft } from 'lucide-react';
 import Card, {
@@ -8,6 +9,25 @@ import Card, {
 } from '../components/ui/Card';
 
 const VerifyEmailPage = () => {
+=======
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import VerifyEmail from '../components/auth/VerifyEmail';
+
+const VerifyEmailPage: React.FC = () => {
+  const { user } = useAuthStore();
+
+  // If there's no user at all, redirect to signup
+  if (!user) {
+    return <Navigate to="/signup" replace />;
+  }
+
+  // If user exists and is already verified, redirect to dashboard
+  if (user.emailConfirmed) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+>>>>>>> 01ba1d84af2f7d324d003f73076d42ee67ffabcc
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
