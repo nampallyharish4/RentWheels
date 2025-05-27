@@ -161,13 +161,10 @@ const Dashboard: React.FC = () => {
     });
   }, [bookings, now]);
 
-<<<<<<< HEAD
-=======
   if (!user || !profile) {
     return <Navigate to="/login" replace />;
   }
 
->>>>>>> 01ba1d84af2f7d324d003f73076d42ee67ffabcc
   const renderUserVehicleCard = (vehicle: Vehicle) => (
     <Card key={vehicle.id} className="overflow-hidden flex flex-col">
       <img
