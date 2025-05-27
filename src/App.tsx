@@ -16,7 +16,6 @@ import VehicleListPage from './pages/VehicleListPage';
 import AddVehiclePage from './pages/AddVehiclePage';
 import EditVehiclePage from './pages/EditVehiclePage';
 import EditProfilePage from './pages/EditProfilePage';
-<<<<<<< HEAD
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
