@@ -9,7 +9,136 @@ import { useBookingStore } from '../../store/bookingStore';
 import { differenceInDays, format } from 'date-fns';
 import type { PaymentFormData } from '../../types';
 
-const PaymentForm: React.FC = () => {
+interface PaymentFormProps {
+  onSubmit: (data: PaymentFormData) => void;
+  isLoading?: boolean;
+}
+
+export function PaymentForm({ onSubmit, isLoading = false }: PaymentFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PaymentFormData>();
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div>
+        <label
+          htmlFor="cardNumber"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Card Number
+        </label>
+        <input
+          type="text"
+          id="cardNumber"
+          {...register('cardNumber', {
+            required: 'Card number is required',
+            pattern: {
+              value: /^[0-9]{16}$/,
+              message: 'Please enter a valid 16-digit card number',
+            },
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          placeholder="1234 5678 9012 3456"
+        />
+        {errors.cardNumber && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.cardNumber.message}
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="expiryDate"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Expiry Date
+          </label>
+          <input
+            type="text"
+            id="expiryDate"
+            {...register('expiryDate', {
+              required: 'Expiry date is required',
+              pattern: {
+                value: /^(0[1-9]|1[0-2])\/([0-9]{2})$/,
+                message: 'Please enter a valid date (MM/YY)',
+              },
+            })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="MM/YY"
+          />
+          {errors.expiryDate && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.expiryDate.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="cvv"
+            className="block text-sm font-medium text-gray-700"
+          >
+            CVV
+          </label>
+          <input
+            type="text"
+            id="cvv"
+            {...register('cvv', {
+              required: 'CVV is required',
+              pattern: {
+                value: /^[0-9]{3,4}$/,
+                message: 'Please enter a valid CVV',
+              },
+            })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="123"
+          />
+          {errors.cvv && (
+            <p className="mt-1 text-sm text-red-600">{errors.cvv.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Name on Card
+        </label>
+        <input
+          type="text"
+          id="name"
+          {...register('name', { required: 'Name is required' })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          placeholder="John Doe"
+        />
+        {errors.name && (
+          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+          isLoading
+            ? 'bg-indigo-400 cursor-not-allowed'
+            : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+        }`}
+      >
+        {isLoading ? 'Processing Payment...' : 'Pay Now'}
+      </button>
+    </form>
+  );
+}
+
+const PaymentFormComponent: React.FC = () => {
   const navigate = useNavigate();
   const { currentBooking, setPaymentFormData, processPayment } =
     useBookingStore();
@@ -300,4 +429,4 @@ const PaymentForm: React.FC = () => {
   );
 };
 
-export default PaymentForm;
+export default PaymentFormComponent;

@@ -178,37 +178,42 @@ export const useVehicleStore = create<VehicleState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      // Get the current user's profile
+      const profile = useAuthStore.getState().profile;
+      if (!profile) {
+        throw new Error('You must be logged in to list a vehicle.');
+      }
+
       // Convert from camelCase to snake_case for Supabase
-      const vehicleData: Record<string, any> = {
+      const vehicleData = {
         make: vehicle.make,
         model: vehicle.model,
         year: vehicle.year,
         daily_rate: vehicle.dailyRate,
-        category: vehicle.category,
-        description: vehicle.description,
+        category: vehicle.category || 'sedan', // Default to sedan if not specified
+        description: vehicle.description || '',
         image_url: vehicle.imageUrl,
         available: vehicle.available !== undefined ? vehicle.available : true,
-        owner_id: vehicle.ownerId,
+        owner_id: profile.id, // Use the profile ID from auth store
         location: vehicle.location,
       };
 
-      const { data, error } = await supabase
-        .from('vehicles')
-        .insert(vehicleData)
-        .select()
-        .single();
+      // Use RPC call to bypass RLS
+      const { data, error } = await supabase.rpc('create_vehicle', vehicleData);
 
-      if (error) throw error;
-
-      // Refresh the vehicles list
-      await get().fetchVehicles();
-
-      if (vehicle.ownerId) {
-        await get().fetchUserListedVehicles(vehicle.ownerId.toString());
+      if (error) {
+        console.error('Error creating vehicle:', error);
+        throw new Error(error.message);
       }
 
+      if (!data) {
+        throw new Error('Failed to create vehicle');
+      }
+
+      // Return the ID of the newly created vehicle
       return data.id;
     } catch (error) {
+      console.error('Create vehicle error:', error);
       set({ error: (error as Error).message });
       throw error;
     } finally {

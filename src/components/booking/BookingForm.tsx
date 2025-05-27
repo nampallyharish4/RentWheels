@@ -10,7 +10,122 @@ import { useVehicleStore } from '../../store/vehicleStore';
 import { format, addDays, differenceInDays, isValid } from 'date-fns';
 import type { BookingFormData } from '../../types';
 
-const BookingForm: React.FC = () => {
+interface BookingFormProps {
+  onSubmit: (data: BookingFormData) => void;
+  isLoading?: boolean;
+}
+
+export function BookingForm({ onSubmit, isLoading = false }: BookingFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<BookingFormData>();
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div>
+        <label
+          htmlFor="startDate"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Start Date
+        </label>
+        <input
+          type="date"
+          id="startDate"
+          min={today}
+          {...register('startDate', { required: 'Start date is required' })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+        {errors.startDate && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.startDate.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="endDate"
+          className="block text-sm font-medium text-gray-700"
+        >
+          End Date
+        </label>
+        <input
+          type="date"
+          id="endDate"
+          min={today}
+          {...register('endDate', { required: 'End date is required' })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+        {errors.endDate && (
+          <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="pickupAddress"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Pickup Address
+        </label>
+        <input
+          type="text"
+          id="pickupAddress"
+          {...register('pickupAddress', {
+            required: 'Pickup address is required',
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+        {errors.pickupAddress && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.pickupAddress.message}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="dropoffAddress"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Drop-off Address
+        </label>
+        <input
+          type="text"
+          id="dropoffAddress"
+          {...register('dropoffAddress', {
+            required: 'Drop-off address is required',
+          })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+        />
+        {errors.dropoffAddress && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.dropoffAddress.message}
+          </p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+          isLoading
+            ? 'bg-indigo-400 cursor-not-allowed'
+            : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+        }`}
+      >
+        {isLoading ? 'Processing...' : 'Book Now'}
+      </button>
+    </form>
+  );
+}
+
+const BookingFormComponent: React.FC = () => {
   const navigate = useNavigate();
   const { selectedVehicle } = useVehicleStore();
   const { setBookingFormData, vehicleId, createBooking } = useBookingStore();
@@ -105,113 +220,10 @@ const BookingForm: React.FC = () => {
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Input
-                id="startDate"
-                type="date"
-                label="Pick-up Date"
-                leftIcon={<Calendar size={18} />}
-                error={errors.startDate?.message}
-                min={format(today, 'yyyy-MM-dd')}
-                fullWidth
-                {...register('startDate', {
-                  required: 'Pick-up date is required',
-                })}
-              />
-            </div>
-
-            <div>
-              <Input
-                id="endDate"
-                type="date"
-                label="Drop-off Date"
-                leftIcon={<Calendar size={18} />}
-                error={errors.endDate?.message}
-                min={startDate || format(tomorrow, 'yyyy-MM-dd')}
-                fullWidth
-                {...register('endDate', {
-                  required: 'Drop-off date is required',
-                  validate: (value) =>
-                    new Date(value) > new Date(startDate) ||
-                    'Drop-off date must be after pick-up date',
-                })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Input
-              id="pickupAddress"
-              label="Pick-up Location"
-              leftIcon={<MapPin size={18} />}
-              placeholder="Enter pick-up address"
-              error={errors.pickupAddress?.message}
-              fullWidth
-              {...register('pickupAddress', {
-                required: 'Pick-up address is required',
-              })}
-            />
-          </div>
-
-          <div>
-            <Input
-              id="dropoffAddress"
-              label="Drop-off Location"
-              leftIcon={<MapPin size={18} />}
-              placeholder="Enter drop-off address"
-              error={errors.dropoffAddress?.message}
-              fullWidth
-              {...register('dropoffAddress', {
-                required: 'Drop-off address is required',
-              })}
-            />
-          </div>
-
-          <div className="p-4 border rounded-md bg-secondary-50/50">
-            <h3 className="text-md font-semibold text-secondary-800 mb-2">
-              Price Summary
-            </h3>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="text-secondary-600">Daily Rate:</span>
-                <span className="font-medium">
-                  ₹{selectedVehicle.dailyRate.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-secondary-600">Number of days:</span>
-                <span className="font-medium">
-                  {isDateRangeValid ? days : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between text-lg font-semibold text-secondary-900 pt-2 border-t mt-2">
-                <span>Total Price:</span>
-                <span className="text-primary-600">
-                  {isDateRangeValid ? `₹${totalPrice.toFixed(2)}` : '-'}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-secondary-500 mt-1">
-              (Taxes and fees might apply)
-            </p>
-          </div>
-
-          <Button
-            type="submit"
-            fullWidth
-            disabled={!isDateRangeValid}
-            className="mt-6"
-          >
-            {isDateRangeValid
-              ? `Proceed to Pay ₹${totalPrice.toFixed(2)}`
-              : 'Select valid dates'}
-          </Button>
-        </form>
+        <BookingForm onSubmit={onSubmit} isLoading={!isDateRangeValid} />
       </CardContent>
     </Card>
   );
 };
 
-export default BookingForm;
+export default BookingFormComponent;

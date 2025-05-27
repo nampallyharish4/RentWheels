@@ -1,218 +1,192 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import type { AuthUser, UserProfile } from '../types';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  password: string;
+  full_name?: string;
+  created_at?: string;
+}
 
 interface AuthState {
-  user: AuthUser | null;
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
-  
-  // Auth actions
+
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    full_name?: string
+  ) => Promise<void>;
   logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  loadUser: () => Promise<void>;
   loadProfile: () => Promise<void>;
-  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  profile: null,
-  isLoading: false,
-  error: null,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      profile: null,
+      isLoading: false,
+      error: null,
 
-  login: async (email: string, password: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      login: async (email: string, password: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          console.log('Attempting login with:', { email });
 
-      if (error) throw error;
+          // Find user by email and password
+          const { data: profiles, error: searchError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, created_at')
+            .eq('email', email)
+            .eq('password', password);
 
-      if (data.user) {
-        set({
-          user: {
-            id: data.user.id,
-            email: data.user.email || '',
-            emailConfirmed: data.user.email_confirmed_at !== null,
-          },
-        });
-        
-        // Load user profile after login
-        await get().loadProfile();
-      }
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+          if (searchError) {
+            console.error('Login error:', searchError);
+            throw new Error('Invalid email or password');
+          }
 
-  signup: async (email: string, password: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`, // Redirect to login page after verification
+          if (!profiles || profiles.length === 0) {
+            console.log('No matching profile found');
+            throw new Error('Invalid email or password');
+          }
+
+          const profile = profiles[0];
+          console.log('Login successful:', { profileId: profile.id });
+
+          // Store profile without password
+          set({
+            profile: {
+              ...profile,
+              password: '', // Don't store password in client
+            },
+          });
+        } catch (error) {
+          console.error('Login process error:', error);
+          set({ error: (error as Error).message });
+          throw error;
+        } finally {
+          set({ isLoading: false });
         }
-      });
+      },
 
-      if (error) throw error;
+      signup: async (email: string, password: string, full_name?: string) => {
+        try {
+          set({ isLoading: true, error: null });
+          console.log('Attempting signup:', { email, full_name });
 
-      if (data.user) {
-        // Check if email confirmation was sent
-        if (data.user.identities && data.user.identities.length === 0) {
-          throw new Error('This email is already registered. Please sign in or reset your password.');
+          // Check if email already exists
+          const { data: existingUser, error: searchError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email);
+
+          if (searchError) {
+            console.error('Email check error:', searchError);
+            throw new Error('Error checking email availability');
+          }
+
+          if (existingUser && existingUser.length > 0) {
+            console.log('Email already exists:', email);
+            throw new Error('Email already registered');
+          }
+
+          // Create new profile
+          const { data: profile, error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                email,
+                password,
+                full_name,
+                created_at: new Date().toISOString(),
+              },
+            ])
+            .select('id, email, full_name, created_at')
+            .single();
+
+          if (insertError) {
+            console.error('Profile creation error:', insertError);
+            throw new Error('Failed to create account');
+          }
+
+          if (profile) {
+            console.log('Signup successful:', { profileId: profile.id });
+            // Store profile without password
+            set({
+              profile: {
+                ...profile,
+                password: '', // Don't store password in client
+              },
+            });
+          }
+        } catch (error) {
+          console.error('Signup process error:', error);
+          set({ error: (error as Error).message });
+          throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      logout: async () => {
+        console.log('Logging out user');
+        set({ profile: null, error: null });
+      },
+
+      loadProfile: async () => {
+        const profile = get().profile;
+        if (!profile?.email) {
+          console.log('No profile to load');
+          return;
         }
 
-        set({
-          user: {
-            id: data.user.id,
-            email: data.user.email || '',
-            emailConfirmed: data.user.email_confirmed_at !== null,
-          },
-        });
-        
-        // Create user profile
-        await supabase.from('profiles').insert({
-          id: data.user.id,
-          email: data.user.email || '',
-        });
-      }
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
+        try {
+          set({ isLoading: true, error: null });
+          console.log('Loading profile for:', { email: profile.email });
+
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, created_at')
+            .eq('email', profile.email)
+            .single();
+
+          if (error) {
+            console.error('Profile load error:', error);
+            throw error;
+          }
+
+          if (data) {
+            console.log('Profile loaded successfully');
+            // Store profile without password
+            set({
+              profile: {
+                ...data,
+                password: '', // Don't store password in client
+              },
+            });
+          }
+        } catch (error) {
+          console.error('Load profile process error:', error);
+          set({ error: (error as Error).message });
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({
+        profile: state.profile
+          ? {
+              ...state.profile,
+              password: '', // Never persist password
+            }
+          : null,
+      }),
     }
-  },
-
-  logout: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      set({ user: null, profile: null });
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  resetPassword: async (email: string) => {
-    try {
-      set({ isLoading: true, error: null });
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) throw error;
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  loadUser: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      const { data, error } = await supabase.auth.getUser();
-      
-      if (error) throw error;
-      
-      if (data.user) {
-        set({
-          user: {
-            id: data.user.id,
-            email: data.user.email || '',
-            emailConfirmed: data.user.email_confirmed_at !== null,
-          },
-        });
-        
-        // Load user profile after getting user
-        await get().loadProfile();
-      }
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  loadProfile: async () => {
-    try {
-      const { user } = get();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      // If there's a data not found error, set profile to null
-      if (error?.code === 'PGRST116') {
-        set({ profile: null });
-        return;
-      }
-
-      // For any other error, throw it
-      if (error) throw error;
-
-      if (data) {
-        set({
-          profile: {
-            id: data.id,
-            firstName: data.first_name,
-            lastName: data.last_name,
-            phone: data.phone,
-            avatarUrl: data.avatar_url,
-            email: data.email,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          },
-        });
-      } else {
-        set({ profile: null });
-      }
-    } catch (error) {
-      set({ error: (error as Error).message });
-    }
-  },
-
-  updateProfile: async (profile: Partial<UserProfile>) => {
-    try {
-      const { user } = get();
-      if (!user) throw new Error('User not authenticated');
-
-      set({ isLoading: true, error: null });
-
-      // Convert from camelCase to snake_case for Supabase
-      const updateData = {
-        first_name: profile.firstName,
-        last_name: profile.lastName,
-        phone: profile.phone,
-        avatar_url: profile.avatarUrl,
-      };
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Reload profile to get updated data
-      await get().loadProfile();
-    } catch (error) {
-      set({ error: (error as Error).message });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-}));
+  )
+);

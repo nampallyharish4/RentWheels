@@ -31,7 +31,7 @@ const initialFormData: VehicleFormData = {
 
 const AddVehiclePage: React.FC = () => {
   const { createVehicle } = useVehicleStore();
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,7 +62,7 @@ const AddVehiclePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    if (!profile) {
       setSubmitError('You must be logged in to list a vehicle.');
       return;
     }
@@ -88,7 +88,7 @@ const AddVehiclePage: React.FC = () => {
         ...formData,
         year: parseInt(formData.year, 10),
         dailyRate: parseFloat(formData.price), // Ensure field name matches store (dailyRate)
-        ownerId: user.id,
+        ownerId: profile.id,
         // category will need to be handled if it's a required part of your Vehicle type for creation
         // For now, assuming it might be optional or handled by default in Supabase/store
         category: 'sedan', // Example default, adjust as needed or add a form field
@@ -103,15 +103,15 @@ const AddVehiclePage: React.FC = () => {
 
       const newVehicleId = await createVehicle(restOfData as any);
       setNewlyCreatedVehicleId(newVehicleId); // Store ID for navigation after modal close
-      setSuccessModalTitle('Vehicle Listed!');
+      setSuccessModalTitle('Vehicle Listed Successfully!');
       setSuccessModalMessage(
-        'Your vehicle has been successfully listed and is now available for others to see.'
+        'Your vehicle has been successfully listed and is now available for renters to book.'
       );
       setIsSuccessModalOpen(true);
     } catch (error) {
       console.error('Failed to list vehicle:', error);
       setSubmitError(
-        (error as Error).message || 'An unexpected error occurred.'
+        (error as Error).message || 'Failed to list vehicle. Please try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -132,10 +132,10 @@ const AddVehiclePage: React.FC = () => {
     <div className="container mx-auto max-w-3xl px-4 py-8">
       <Card>
         <CardHeader>
-          <h1 className="text-2xl font-bold text-secondary-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             List Your Vehicle
           </h1>
-          <p className="text-secondary-600">
+          <p className="text-gray-600">
             Provide comprehensive details about your vehicle to attract renters.
           </p>
         </CardHeader>
@@ -150,7 +150,7 @@ const AddVehiclePage: React.FC = () => {
               <div>
                 <label
                   htmlFor="make"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Make <span className="text-red-500">*</span>
                 </label>
@@ -161,13 +161,13 @@ const AddVehiclePage: React.FC = () => {
                   value={formData.make}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 />
               </div>
               <div>
                 <label
                   htmlFor="model"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Model <span className="text-red-500">*</span>
                 </label>
@@ -178,13 +178,13 @@ const AddVehiclePage: React.FC = () => {
                   value={formData.model}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 />
               </div>
               <div>
                 <label
                   htmlFor="year"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Year <span className="text-red-500">*</span>
                 </label>
@@ -195,14 +195,16 @@ const AddVehiclePage: React.FC = () => {
                   value={formData.year}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
+                  min="1900"
+                  max={new Date().getFullYear() + 1}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                   placeholder="e.g., 2020"
                 />
               </div>
               <div>
                 <label
                   htmlFor="price"
-                  className="block text-sm font-medium text-secondary-700 mb-1"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Price per day (₹) <span className="text-red-500">*</span>
                 </label>
@@ -210,18 +212,19 @@ const AddVehiclePage: React.FC = () => {
                   type="number"
                   name="price"
                   id="price"
-                  step="0.01"
                   value={formData.price}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="e.g., 50"
+                  min="0"
+                  step="100"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., 2500"
                 />
               </div>
               <div>
                 <label
                   htmlFor="location"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Location (City, State) <span className="text-red-500">*</span>
                 </label>
@@ -232,14 +235,14 @@ const AddVehiclePage: React.FC = () => {
                   value={formData.location}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="e.g., Los Angeles, CA"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., Hyderabad, Telangana"
                 />
               </div>
               <div>
                 <label
                   htmlFor="imageUrl"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Image URL <span className="text-red-500">*</span>
                 </label>
@@ -250,7 +253,7 @@ const AddVehiclePage: React.FC = () => {
                   value={formData.imageUrl}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -260,17 +263,18 @@ const AddVehiclePage: React.FC = () => {
               <div>
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Detailed Description
                 </label>
                 <textarea
                   name="description"
                   id="description"
-                  rows={5}
+                  rows={4}
                   value={formData.description}
                   onChange={handleChange}
-                  className="mt-1 block w-full input-class"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="Describe your vehicle's features, condition, and any special notes for renters..."
                 />
               </div>
               <div className="flex items-center">
@@ -280,20 +284,24 @@ const AddVehiclePage: React.FC = () => {
                   type="checkbox"
                   checked={formData.available}
                   onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 border-secondary-300 rounded focus:ring-primary-500"
+                  className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                 />
                 <label
                   htmlFor="available"
-                  className="ml-2 block text-sm text-secondary-900"
+                  className="ml-2 block text-sm text-gray-700"
                 >
                   Available for rent immediately
                 </label>
               </div>
             </div>
 
-            <div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'List My Vehicle'}
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {isSubmitting ? 'Listing Vehicle...' : 'List My Vehicle'}
               </Button>
             </div>
           </form>

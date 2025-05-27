@@ -1,12 +1,11 @@
 import React from 'react';
-import Button from './Button';
+import { CheckCircle, X } from 'lucide-react';
 
 interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   message: string;
-  closeButtonText?: string;
 }
 
 const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -14,25 +13,59 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   onClose,
   title,
   message,
-  closeButtonText = 'OK',
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
-        <h2 className="text-xl font-semibold text-primary-700 mb-4">
-          {' '}
-          {/* Primary color for success title */}
-          {title}
-        </h2>
-        <p className="text-secondary-600 mb-6 whitespace-pre-wrap">{message}</p>
-        <div className="flex justify-end space-x-3">
-          <Button variant="primary" onClick={onClose}>
-            {' '}
-            {/* Primary variant for the button */}
-            {closeButtonText}
-          </Button>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        />
+
+        <span
+          className="hidden sm:inline-block sm:h-screen sm:align-middle"
+          aria-hidden="true"
+        >
+          &#8203;
+        </span>
+
+        <div className="relative inline-block transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 sm:align-middle">
+          <div>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="mt-3 text-center sm:mt-5">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                {title}
+              </h3>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">{message}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+            <button
+              type="button"
+              className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none"
+              onClick={onClose}
+            >
+              <span className="sr-only">Close</span>
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="mt-5 sm:mt-6">
+            <button
+              type="button"
+              className="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm"
+              onClick={onClose}
+            >
+              Got it!
+            </button>
+          </div>
         </div>
       </div>
     </div>

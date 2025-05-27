@@ -1,211 +1,139 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import Button from '../components/ui/Button';
+import { User, Phone, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Card, { CardContent, CardHeader } from '../components/ui/Card';
-import { User, Phone, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import SuccessModal from '../components/ui/SuccessModal';
-import type { UserProfile } from '../types';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 
-interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  avatarUrl: string;
-}
-
-const EditProfilePage: React.FC = () => {
+const EditProfilePage = () => {
   const navigate = useNavigate();
-  const {
-    profile,
-    updateProfile,
-    isLoading: authLoading,
-    error: authError,
-    loadProfile, // To ensure profile is fresh
-    user,
-  } = useAuthStore();
-
-  const [formData, setFormData] = useState<ProfileFormData>({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    avatarUrl: '',
+  const { user, profile, updateProfile } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    full_name: profile?.full_name || '',
+    phone_number: profile?.phone_number || '',
+    avatar_url: profile?.avatar_url || '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
-    } else if (!profile) {
-      loadProfile(); // Attempt to load profile if not available but user exists
     }
-  }, [user, profile, loadProfile, navigate]);
+  }, [user, navigate]);
 
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        phone: profile.phone || '',
-        avatarUrl: profile.avatarUrl || '',
-      });
-    }
-  }, [profile]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    const profileUpdateData: Partial<UserProfile> = {
-      firstName: formData.firstName.trim(),
-      lastName: formData.lastName.trim(),
-      phone: formData.phone.trim(),
-      avatarUrl: formData.avatarUrl.trim(),
-    };
-
-    // Remove empty strings so they don't overwrite existing values with blanks if not intended
-    // The backend `updateProfile` in store already handles only defined fields.
-    // However, sending empty strings might be interpreted as wanting to clear fields.
-    // Depending on desired behavior, this can be adjusted.
-    Object.keys(profileUpdateData).forEach((key) => {
-      const k = key as keyof Partial<UserProfile>;
-      if (profileUpdateData[k] === '') {
-        delete profileUpdateData[k];
-      }
-    });
+    setIsLoading(true);
+    setError('');
 
     try {
-      await updateProfile(profileUpdateData);
-      setIsSuccessModalOpen(true);
+      await updateProfile({
+        id: user?.id as string,
+        ...formData,
+      });
+      setShowSuccess(true);
     } catch (error) {
-      setSubmitError((error as Error).message || 'Failed to update profile.');
+      setError('Failed to update profile. Please try again.');
+      console.error('Profile update error:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    navigate('/dashboard');
-  };
-
-  if (authLoading && !profile) {
+  if (!user || !profile) {
     return (
-      <div className="min-h-screen bg-secondary-50 flex justify-center items-center">
-        Loading profile...
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary-50 py-8">
-      <div className="container mx-auto max-w-xl px-4">
-        <Card>
-          <CardHeader>
-            <h1 className="text-2xl font-bold text-secondary-900">
-              Edit Profile
-            </h1>
-            <p className="text-secondary-600">
-              Update your personal information.
-            </p>
-          </CardHeader>
-          <CardContent>
-            {(submitError || authError) && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-start">
-                <AlertCircle
-                  className="text-red-500 mr-2 flex-shrink-0 mt-0.5"
-                  size={16}
-                />
-                <span className="text-red-700 text-sm">
-                  {submitError || authError}
-                </span>
+    <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <Card>
+        <CardHeader>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
+          <p className="text-sm text-gray-600">
+            Update your personal information
+          </p>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              id="full_name"
+              name="full_name"
+              label="Full Name"
+              value={formData.full_name}
+              onChange={handleInputChange}
+              placeholder="Enter your full name"
+              leftIcon={<User size={18} />}
+              required
+            />
+
+            <Input
+              id="phone_number"
+              name="phone_number"
+              label="Phone Number"
+              value={formData.phone_number}
+              onChange={handleInputChange}
+              placeholder="Enter your phone number"
+              leftIcon={<Phone size={18} />}
+              type="tel"
+            />
+
+            <Input
+              id="avatar_url"
+              name="avatar_url"
+              label="Profile Picture URL"
+              value={formData.avatar_url}
+              onChange={handleInputChange}
+              placeholder="Enter URL for your profile picture"
+              leftIcon={<ImageIcon size={18} />}
+            />
+
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle size={16} />
+                <span>{error}</span>
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  label="First Name"
-                  leftIcon={<User size={18} />}
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="Enter your first name"
-                  fullWidth
-                />
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  label="Last Name"
-                  leftIcon={<User size={18} />}
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Enter your last name"
-                  fullWidth
-                />
-              </div>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                label="Phone Number"
-                leftIcon={<Phone size={18} />}
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Enter your phone number"
-                fullWidth
-              />
-              <Input
-                id="avatarUrl"
-                name="avatarUrl"
-                type="url"
-                label="Avatar URL"
-                leftIcon={<ImageIcon size={18} />}
-                value={formData.avatarUrl}
-                onChange={handleChange}
-                placeholder="https://example.com/avatar.jpg"
-                fullWidth
-              />
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button
-                  type="submit"
-                  isLoading={isSubmitting || authLoading}
-                  disabled={isSubmitting || authLoading}
-                  fullWidth
-                  className="sm:flex-1"
-                >
-                  Save Changes
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/dashboard')}
-                  fullWidth
-                  className="sm:flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                isLoading
+                  ? 'bg-indigo-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              }`}
+            >
+              {isLoading ? 'Updating...' : 'Update Profile'}
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+
       <SuccessModal
-        isOpen={isSuccessModalOpen}
-        onClose={handleSuccessModalClose}
+        isOpen={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          navigate('/dashboard');
+        }}
         title="Profile Updated"
-        message="Your profile information has been successfully updated."
+        message="Your profile has been successfully updated."
       />
     </div>
   );

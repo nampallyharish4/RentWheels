@@ -21,7 +21,7 @@ import type { Vehicle, Booking } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
 
 const Dashboard: React.FC = () => {
-  const { user, profile } = useAuthStore();
+  const { profile } = useAuthStore();
   const {
     bookings,
     fetchUserBookings,
@@ -51,11 +51,11 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (profile) {
       fetchUserBookings();
-      fetchUserListedVehicles(user.id);
+      fetchUserListedVehicles(profile.id);
     }
-  }, [user, fetchUserBookings, fetchUserListedVehicles]);
+  }, [profile, fetchUserBookings, fetchUserListedVehicles]);
 
   useEffect(() => {
     if (vehiclesStoreError) {
@@ -158,32 +158,6 @@ const Dashboard: React.FC = () => {
     });
   }, [bookings, now]);
 
-  if (!user || !profile) {
-    return (
-      <div className="container mx-auto max-w-6xl px-4 py-12">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle size={48} className="mx-auto text-amber-500 mb-4" />
-            <h2 className="text-2xl font-bold text-secondary-900 mb-2">
-              Authentication Required
-            </h2>
-            <p className="text-secondary-600 mb-6">
-              Please sign in to access your dashboard.
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Link to="/login">
-                <Button>Sign In</Button>
-              </Link>
-              <Link to="/signup">
-                <Button variant="outline">Create Account</Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const renderUserVehicleCard = (vehicle: Vehicle) => (
     <Card key={vehicle.id} className="overflow-hidden flex flex-col">
       <img
@@ -247,9 +221,9 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-secondary-900">Dashboard</h1>
-          <p className="text-secondary-600">
-            Welcome back, {profile.firstName || profile.email.split('@')[0]}!
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">
+            Welcome back, {profile?.full_name || profile?.email.split('@')[0]}!
           </p>
         </div>
 
@@ -274,12 +248,12 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardContent className="py-6">
             <div className="flex items-center">
-              <div className="bg-primary-100 p-3 rounded-full mr-4">
-                <CalendarCheck className="h-6 w-6 text-primary-600" />
+              <div className="bg-orange-100 p-3 rounded-full mr-4">
+                <CalendarCheck className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-secondary-600 text-sm">Active Bookings</p>
-                <p className="text-2xl font-bold text-secondary-900">
+                <p className="text-gray-600 text-sm">Active Bookings</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {bookings.filter((b) => b.status === 'confirmed').length}
                 </p>
               </div>
@@ -290,12 +264,12 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardContent className="py-6">
             <div className="flex items-center">
-              <div className="bg-secondary-100 p-3 rounded-full mr-4">
-                <Clock className="h-6 w-6 text-secondary-600" />
+              <div className="bg-gray-100 p-3 rounded-full mr-4">
+                <Clock className="h-6 w-6 text-gray-600" />
               </div>
               <div>
-                <p className="text-secondary-600 text-sm">Completed Trips</p>
-                <p className="text-2xl font-bold text-secondary-900">
+                <p className="text-gray-600 text-sm">Completed Trips</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {bookings.filter((b) => b.status === 'completed').length}
                 </p>
               </div>
@@ -304,13 +278,13 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="mb-6 border-b border-secondary-200">
+      <div className="mb-6 border-b border-gray-200">
         <div className="flex space-x-8">
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'bookings'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
+                ? 'border-orange-600 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
             onClick={() => setActiveTab('bookings')}
           >
@@ -319,8 +293,8 @@ const Dashboard: React.FC = () => {
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 'vehicles'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
+                ? 'border-orange-600 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
             onClick={() => setActiveTab('vehicles')}
           >
@@ -507,8 +481,8 @@ const Dashboard: React.FC = () => {
                 <Button
                   onClick={() => {
                     setDashboardError(null);
-                    if (user) {
-                      fetchUserListedVehicles(user.id);
+                    if (profile) {
+                      fetchUserListedVehicles(profile.id);
                     }
                   }}
                   className="mt-4"
@@ -541,37 +515,29 @@ const Dashboard: React.FC = () => {
       <div className="mt-8">
         <Card>
           <CardHeader>
-            <h2 className="text-lg font-semibold text-secondary-900 flex items-center">
-              <User size={20} className="mr-2 text-primary-600" />
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <User size={20} className="mr-2 text-orange-600" />
               Profile Information
             </h2>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-secondary-500">Email</p>
-                <p className="font-medium text-secondary-900">
-                  {profile.email}
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="font-medium text-gray-900">{profile?.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Name</p>
+                <p className="font-medium text-gray-900">
+                  {profile?.full_name || 'Not provided'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-secondary-500">Name</p>
-                <p className="font-medium text-secondary-900">
-                  {profile.firstName && profile.lastName
-                    ? `${profile.firstName} ${profile.lastName}`
-                    : 'Not provided'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-secondary-500">Phone</p>
-                <p className="font-medium text-secondary-900">
-                  {profile.phone || 'Not provided'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-secondary-500">Member Since</p>
-                <p className="font-medium text-secondary-900">
-                  {format(new Date(profile.createdAt), 'MMMM dd, yyyy')}
+                <p className="text-sm text-gray-500">Member Since</p>
+                <p className="font-medium text-gray-900">
+                  {profile?.created_at
+                    ? format(new Date(profile.created_at), 'MMMM dd, yyyy')
+                    : 'Not available'}
                 </p>
               </div>
             </div>
