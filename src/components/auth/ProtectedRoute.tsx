@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-
-const ProtectedRoute = () => {
-  const profile = useAuthStore((state) => state.profile);
-
-  if (!profile) {
-    // Not logged in, redirect to login page
-    return <Navigate to="/login" />;
-  }
-
-  // Logged in, render child routes
-=======
 import React from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -35,7 +21,6 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
->>>>>>> 01ba1d84af2f7d324d003f73076d42ee67ffabcc
   return <Outlet />;
 };
 
