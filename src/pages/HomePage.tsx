@@ -1,8 +1,18 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Car, Shield, Clock, Star, ArrowRight } from 'lucide-react';
+import {
+  Search,
+  Car,
+  Shield,
+  Clock,
+  Star,
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Tag,
+} from 'lucide-react';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
+import Card, { CardContent } from '../components/ui/Card';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,6 +24,46 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     fetchFeaturedVehicles();
   }, [fetchFeaturedVehicles]);
+
+  // Dummy featured vehicles data
+  const dummyVehicles = [
+    {
+      id: 'dummy1',
+      make: 'Tesla',
+      model: 'Model S',
+      year: 2023,
+      imageUrl:
+        'https://images.unsplash.com/photo-1617704548623-340376564e68?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+      dailyRate: 12000,
+      location: 'Mumbai, Maharashtra',
+      category: 'electric',
+      available: true,
+    },
+    {
+      id: 'dummy2',
+      make: 'BMW',
+      model: 'X5',
+      year: 2022,
+      imageUrl:
+        'https://images.unsplash.com/photo-1555215695-3004980ad54e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+      dailyRate: 9500,
+      location: 'Delhi, NCR',
+      category: 'suv',
+      available: true,
+    },
+    {
+      id: 'dummy3',
+      make: 'Mercedes',
+      model: 'C-Class',
+      year: 2023,
+      imageUrl:
+        'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+      dailyRate: 8500,
+      location: 'Bangalore, Karnataka',
+      category: 'sedan',
+      available: true,
+    },
+  ];
 
   return (
     <>
@@ -135,28 +185,226 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredVehicles.length === 0 && (
-                <div className="col-span-3 text-center py-10">
-                  <Car size={48} className="mx-auto text-secondary-300 mb-4" />
-                  <h3 className="text-xl font-semibold text-secondary-900 mb-2">
-                    No Featured Vehicles Available
-                  </h3>
-                  <p className="text-secondary-600 max-w-md mx-auto">
-                    Check back soon as our inventory is regularly updated with
-                    new vehicles.
-                  </p>
-                </div>
-              )}
+              {featuredVehicles.length === 0 &&
+                dummyVehicles.map((vehicle) => (
+                  <Card
+                    key={vehicle.id}
+                    hoverable
+                    className="transition-all duration-300 h-full flex flex-col overflow-hidden"
+                  >
+                    <div className="relative">
+                      <img
+                        src={vehicle.imageUrl}
+                        alt={`${vehicle.make} ${vehicle.model}`}
+                        className="h-48 w-full object-cover"
+                      />
+                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-primary-700">
+                        ₹{vehicle.dailyRate}/day
+                      </div>
+                      <span className="absolute bottom-3 left-3 bg-green-500 text-white px-2 py-0.5 rounded text-xs font-medium">
+                        Available
+                      </span>
+                    </div>
 
-              {featuredVehicles.length > 0 && (
-                <div className="col-span-3 text-center py-10">
-                  <p className="text-secondary-700 text-lg">
-                    Featured vehicle display has been removed.
-                  </p>
-                </div>
-              )}
+                    <CardContent className="flex-1 flex flex-col">
+                      <div className="mb-3">
+                        <h3 className="text-lg font-bold text-secondary-900">
+                          {vehicle.make} {vehicle.model}
+                        </h3>
+                        <div className="flex items-center text-secondary-500 text-sm mt-1">
+                          <Calendar size={16} className="mr-1" />
+                          <span>{vehicle.year}</span>
+                          <span className="mx-2">•</span>
+                          <Tag size={16} className="mr-1" />
+                          <span className="capitalize">{vehicle.category}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center text-secondary-600 text-sm mb-4">
+                        <MapPin
+                          size={16}
+                          className="mr-1 text-primary-600 flex-shrink-0"
+                        />
+                        <span className="truncate">{vehicle.location}</span>
+                      </div>
+
+                      <p className="text-2xl font-bold text-primary-700 mt-auto mb-3">
+                        ₹{vehicle.dailyRate}
+                        <span className="text-sm font-normal text-secondary-600">
+                          /day
+                        </span>
+                      </p>
+
+                      <div className="mt-auto pt-3 border-t border-secondary-100">
+                        <Link to="/vehicles">
+                          <Button variant="primary" fullWidth>
+                            View Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+              {featuredVehicles.length > 0 &&
+                dummyVehicles.map((vehicle) => (
+                  <Card
+                    key={vehicle.id}
+                    hoverable
+                    className="transition-all duration-300 h-full flex flex-col overflow-hidden"
+                  >
+                    <div className="relative">
+                      <img
+                        src={vehicle.imageUrl}
+                        alt={`${vehicle.make} ${vehicle.model}`}
+                        className="h-48 w-full object-cover"
+                      />
+                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold text-primary-700">
+                        ₹{vehicle.dailyRate}/day
+                      </div>
+                      <span className="absolute bottom-3 left-3 bg-green-500 text-white px-2 py-0.5 rounded text-xs font-medium">
+                        Available
+                      </span>
+                    </div>
+
+                    <CardContent className="flex-1 flex flex-col">
+                      <div className="mb-3">
+                        <h3 className="text-lg font-bold text-secondary-900">
+                          {vehicle.make} {vehicle.model}
+                        </h3>
+                        <div className="flex items-center text-secondary-500 text-sm mt-1">
+                          <Calendar size={16} className="mr-1" />
+                          <span>{vehicle.year}</span>
+                          <span className="mx-2">•</span>
+                          <Tag size={16} className="mr-1" />
+                          <span className="capitalize">{vehicle.category}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center text-secondary-600 text-sm mb-4">
+                        <MapPin
+                          size={16}
+                          className="mr-1 text-primary-600 flex-shrink-0"
+                        />
+                        <span className="truncate">{vehicle.location}</span>
+                      </div>
+
+                      <p className="text-2xl font-bold text-primary-700 mt-auto mb-3">
+                        ₹{vehicle.dailyRate}
+                        <span className="text-sm font-normal text-secondary-600">
+                          /day
+                        </span>
+                      </p>
+
+                      <div className="mt-auto pt-3 border-t border-secondary-100">
+                        <Link to="/vehicles">
+                          <Button variant="primary" fullWidth>
+                            View Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Customer Feedback Ratings - Floating */}
+      <section className="py-12 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 mb-8">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-secondary-900 mb-2">
+              What Our Customers Say
+            </h2>
+            <p className="text-secondary-600 max-w-2xl mx-auto">
+              Hear from our satisfied customers about their rental experience
+            </p>
+          </div>
+        </div>
+        
+        <div className="relative">
+          {/* Animation container */}
+          <div className="flex animate-marquee">
+            {/* Feedback cards */}
+            {[1, 2, 3, 4, 5].map((item) => (
+              <div 
+                key={item} 
+                className="flex-shrink-0 w-80 mx-4 bg-white rounded-lg shadow-md p-6 border border-secondary-100"
+              >
+                <div className="flex items-center mb-4">
+                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mr-4">
+                    <span className="text-primary-700 font-bold text-lg">{item}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-secondary-900">
+                      {item === 1 ? 'Madhuvani' : 
+                       item === 2 ? 'Srinitya' : 
+                       item === 3 ? 'Kiranmai' : 
+                       item === 4 ? 'Manasa' : 
+                       'Madhuvani'}
+                    </h4>
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={16} 
+                          className={`${i < 5 - (item % 2) ? 'text-yellow-400' : 'text-secondary-200'} fill-current`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-secondary-600 italic">
+                  "{item === 1 ? 'Great service and excellent vehicle condition. Will definitely rent again!' : 
+                    item === 2 ? 'The booking process was smooth and the car was delivered on time. Highly recommend!' : 
+                    item === 3 ? 'Amazing experience from start to finish. The staff was very helpful and professional.' : 
+                    item === 4 ? 'The vehicle was clean, well-maintained and fuel-efficient. Perfect for our road trip!' : 
+                    'Competitive pricing and excellent customer service. RentWheels is my go-to rental service now!'}"
+                </p>
+              </div>
+            ))}
+            
+            {/* Duplicate cards for seamless looping */}
+            {[1, 2, 3, 4, 5].map((item) => (
+              <div 
+                key={`dup-${item}`} 
+                className="flex-shrink-0 w-80 mx-4 bg-white rounded-lg shadow-md p-6 border border-secondary-100"
+              >
+                <div className="flex items-center mb-4">
+                  <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center mr-4">
+                    <span className="text-primary-700 font-bold text-lg">{item}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-secondary-900">
+                      {item === 1 ? 'Madhuvani' : 
+                       item === 2 ? 'Srinitya' : 
+                       item === 3 ? 'Kiranmai' : 
+                       item === 4 ? 'Manasa' : 
+                       'Madhuvani'}
+                    </h4>
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={16} 
+                          className={`${i < 5 - (item % 2) ? 'text-yellow-400' : 'text-secondary-200'} fill-current`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-secondary-600 italic">
+                  "{item === 1 ? 'Great service and excellent vehicle condition. Will definitely rent again!' : 
+                    item === 2 ? 'The booking process was smooth and the car was delivered on time. Highly recommend!' : 
+                    item === 3 ? 'Amazing experience from start to finish. The staff was very helpful and professional.' : 
+                    item === 4 ? 'The vehicle was clean, well-maintained and fuel-efficient. Perfect for our road trip!' : 
+                    'Competitive pricing and excellent customer service. RentWheels is my go-to rental service now!'}"
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

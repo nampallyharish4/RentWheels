@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Calendar, Lock, CheckCircle } from 'lucide-react';
@@ -157,8 +157,16 @@ const PaymentFormComponent: React.FC = () => {
     },
   });
 
-  if (!currentBooking) {
-    navigate('/vehicles');
+  useEffect(() => {
+    if (currentBooking === null) {
+      console.warn(
+        '[PaymentFormComponent] currentBooking is null, navigating away.'
+      );
+      navigate('/vehicles');
+    }
+  }, [currentBooking, navigate]);
+
+  if (currentBooking === null) {
     return null;
   }
 

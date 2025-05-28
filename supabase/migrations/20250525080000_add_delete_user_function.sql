@@ -64,9 +64,6 @@ comment on function public.delete_user() is 'Allows users to delete their own ac
 -- Notify the database of the changes
 notify pgrst, 'reload schema';
 
--- Enable RLS on the users table if not already enabled
-alter table if exists auth.users enable row level security;
-
 -- Drop existing policies
 drop policy if exists "Users can delete their own account" on auth.users;
 

@@ -19,6 +19,7 @@ interface EditVehicleFormData {
   imageUrl: string;
   location: string;
   available: boolean;
+  type: 'car' | 'bike'; // Add vehicle type
 }
 
 const vehicleCategories: string[] = [
@@ -79,6 +80,7 @@ const EditVehiclePage: React.FC = () => {
         imageUrl: selectedVehicle.imageUrl,
         location: selectedVehicle.location,
         available: selectedVehicle.available,
+        type: selectedVehicle.type, // Initialize type from selectedVehicle
       });
       setPageMessage(null);
     }
@@ -124,7 +126,8 @@ const EditVehiclePage: React.FC = () => {
         !formData.price ||
         !formData.imageUrl ||
         !formData.location ||
-        !formData.category
+        !formData.category ||
+        !formData.type
       ) {
         setSubmitError('Please fill in all required fields (*).');
         setIsSubmitting(false);
@@ -141,6 +144,7 @@ const EditVehiclePage: React.FC = () => {
         imageUrl: formData.imageUrl,
         location: formData.location,
         available: formData.available,
+        type: formData.type, // Include type in update data
       };
 
       await updateVehicle(vehicleId, vehicleUpdateData);
@@ -268,8 +272,9 @@ const EditVehiclePage: React.FC = () => {
                   value={formData.year}
                   onChange={handleChange}
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="e.g., 2020"
+                  min="1900"
+                  max={new Date().getFullYear() + 1}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 />
               </div>
               <div>
@@ -290,6 +295,26 @@ const EditVehiclePage: React.FC = () => {
                   className="mt-1 block w-full input-class"
                   placeholder="e.g., 50"
                 />
+              </div>
+              <div>
+                <label
+                  htmlFor="type"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="type"
+                  id="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="">Select Type</option>
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                </select>
               </div>
               <div>
                 <label

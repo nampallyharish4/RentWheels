@@ -13,16 +13,17 @@ interface FiltersFormData {
   category: CategoryType | '';
   priceMin: string;
   priceMax: string;
+  type: 'car' | 'bike' | 'all' | '';
 }
 
 const VehicleFilters: React.FC = () => {
   const { filters, setFilters, clearFilters } = useVehicleStore();
-  
+
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isDirty }
+    formState: { isDirty },
   } = useForm<FiltersFormData>({
     defaultValues: {
       searchQuery: filters.searchQuery || '',
@@ -30,9 +31,10 @@ const VehicleFilters: React.FC = () => {
       category: filters.category || '',
       priceMin: filters.priceMin?.toString() || '',
       priceMax: filters.priceMax?.toString() || '',
-    }
+      type: filters.type || '',
+    },
   });
-  
+
   const onSubmit = (data: FiltersFormData) => {
     const newFilters = {
       searchQuery: data.searchQuery,
@@ -41,11 +43,12 @@ const VehicleFilters: React.FC = () => {
       priceMin: data.priceMin ? parseInt(data.priceMin) : undefined,
       priceMax: data.priceMax ? parseInt(data.priceMax) : undefined,
       available: true,
+      type: data.type === '' ? undefined : data.type,
     };
-    
+
     setFilters(newFilters);
   };
-  
+
   const handleClearFilters = () => {
     clearFilters();
     reset({
@@ -54,9 +57,10 @@ const VehicleFilters: React.FC = () => {
       category: '',
       priceMin: '',
       priceMax: '',
+      type: '',
     });
   };
-  
+
   return (
     <Card className="p-4 mb-6 sticky top-20">
       <div className="flex items-center justify-between mb-4">
@@ -74,7 +78,7 @@ const VehicleFilters: React.FC = () => {
           </button>
         )}
       </div>
-      
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input
@@ -84,7 +88,7 @@ const VehicleFilters: React.FC = () => {
             fullWidth
           />
         </div>
-        
+
         <div>
           <Input
             placeholder="Location"
@@ -93,7 +97,21 @@ const VehicleFilters: React.FC = () => {
             fullWidth
           />
         </div>
-        
+
+        <div>
+          <label className="block text-sm font-medium text-secondary-700 mb-1">
+            Vehicle Type
+          </label>
+          <select
+            className="w-full rounded-md border border-secondary-300 py-2 px-4 bg-white text-secondary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            {...register('type')}
+          >
+            <option value="">All Types</option>
+            <option value="car">Car</option>
+            <option value="bike">Bike</option>
+          </select>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-secondary-700 mb-1">
             Vehicle Category
@@ -113,7 +131,7 @@ const VehicleFilters: React.FC = () => {
             <option value="electric">Electric</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-secondary-700 mb-1">
             Price Range (per day)
@@ -133,7 +151,7 @@ const VehicleFilters: React.FC = () => {
             />
           </div>
         </div>
-        
+
         <Button type="submit" fullWidth>
           Apply Filters
         </Button>

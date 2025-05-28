@@ -10,6 +10,7 @@ interface VehicleFilters {
   location?: string;
   searchQuery?: string;
   available?: boolean;
+  type?: 'car' | 'bike' | 'all';
 }
 
 interface VehicleState {
@@ -71,6 +72,10 @@ export const useVehicleStore = create<VehicleState>((set, get) => ({
 
       if (currentFilters.category) {
         query = query.eq('category', currentFilters.category);
+      }
+
+      if (currentFilters.type && currentFilters.type !== 'all') {
+        query = query.eq('type', currentFilters.type);
       }
 
       if (currentFilters.location) {
@@ -196,6 +201,7 @@ export const useVehicleStore = create<VehicleState>((set, get) => ({
         available: vehicle.available !== undefined ? vehicle.available : true,
         owner_id: profile.id, // Use the profile ID from auth store
         location: vehicle.location,
+        type: vehicle.type || 'car', // Add type field with default
       };
 
       // Use RPC call to bypass RLS
@@ -243,6 +249,7 @@ export const useVehicleStore = create<VehicleState>((set, get) => ({
         updateData.available = vehicle.available;
       if (vehicle.location !== undefined)
         updateData.location = vehicle.location;
+      if (vehicle.type !== undefined) updateData.type = vehicle.type;
 
       const { error } = await supabase
         .from('vehicles')
@@ -439,6 +446,7 @@ function formatVehicleResponse(vehicle: Record<string, any>): Vehicle {
     available: vehicle.available,
     ownerId: vehicle.owner_id,
     location: vehicle.location,
+    type: vehicle.type,
     createdAt: vehicle.created_at,
     updatedAt: vehicle.updated_at,
   };

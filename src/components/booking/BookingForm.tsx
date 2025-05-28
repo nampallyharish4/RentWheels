@@ -448,6 +448,8 @@ const BookingFormComponent: React.FC = () => {
 
   // Add state for booking submission loading
   const [isBookingLoading, setIsBookingLoading] = React.useState(false);
+  // Add state for booking error message
+  const [bookingError, setBookingError] = React.useState<string | null>(null);
 
   const startDate = watch('startDate');
   const endDate = watch('endDate');
@@ -489,6 +491,8 @@ const BookingFormComponent: React.FC = () => {
 
     setBookingFormData(data);
     setIsBookingLoading(true); // Set loading to true on submission start
+    // Clear previous errors
+    setBookingError(null);
 
     try {
       const bookingId = await createBooking(
@@ -500,7 +504,8 @@ const BookingFormComponent: React.FC = () => {
       navigate(`/booking/payment/${bookingId}`);
     } catch (error) {
       console.error('Failed to create booking', error);
-      // Optionally display error message to the user
+      // Set the error message to display to the user
+      setBookingError((error as Error).message);
     } finally {
       setIsBookingLoading(false); // Set loading to false when submission is complete
     }
@@ -527,6 +532,10 @@ const BookingFormComponent: React.FC = () => {
       </CardHeader>
 
       <CardContent>
+        {/* Display booking error if it exists */}
+        {bookingError && (
+          <div className="text-red-500 text-sm mb-4">{bookingError}</div>
+        )}
         {/* Pass the new loading state to BookingForm */}
         <BookingForm
           onSubmit={onSubmit}

@@ -4,6 +4,7 @@ export interface Vehicle {
   model: string;
   year: number;
   dailyRate: number;
+  type: 'car' | 'bike';
   category: string;
   description: string;
   imageUrl: string;
@@ -21,7 +22,13 @@ export interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'completed'
+    | 'cancelled'
+    | 'owner-approved'
+    | 'owner-rejected';
   pickupAddress: string;
   dropoffAddress: string;
   paymentId: string | null;
@@ -58,14 +65,14 @@ export interface AuthUser {
   emailConfirmed: boolean;
 }
 
-export type CategoryType = 
-  | 'sedan' 
-  | 'suv' 
-  | 'luxury' 
-  | 'compact' 
-  | 'pickup' 
-  | 'minivan' 
-  | 'convertible' 
+export type CategoryType =
+  | 'sedan'
+  | 'suv'
+  | 'luxury'
+  | 'compact'
+  | 'pickup'
+  | 'minivan'
+  | 'convertible'
   | 'electric';
 
 export interface BookingFormData {

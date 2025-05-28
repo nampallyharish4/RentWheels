@@ -16,6 +16,7 @@ interface VehicleFormData {
   imageUrl: string;
   description: string;
   available?: boolean; // Optional, will default to true in store if not set
+  type: string;
 }
 
 const initialFormData: VehicleFormData = {
@@ -27,6 +28,7 @@ const initialFormData: VehicleFormData = {
   imageUrl: '',
   description: '',
   available: true,
+  type: '',
 };
 
 const AddVehiclePage: React.FC = () => {
@@ -77,7 +79,8 @@ const AddVehiclePage: React.FC = () => {
         !formData.year ||
         !formData.price ||
         !formData.imageUrl ||
-        !formData.location
+        !formData.location ||
+        !formData.type
       ) {
         setSubmitError('Please fill in all required fields (*).');
         setIsSubmitting(false);
@@ -91,7 +94,8 @@ const AddVehiclePage: React.FC = () => {
         ownerId: profile.id,
         // category will need to be handled if it's a required part of your Vehicle type for creation
         // For now, assuming it might be optional or handled by default in Supabase/store
-        category: 'sedan', // Example default, adjust as needed or add a form field
+        category: formData.category || 'sedan', // Add category from form, default if not present
+        type: formData.type,
       };
 
       // Remove `price` if `dailyRate` is used, to match Omit<Vehicle, ...>
@@ -200,6 +204,26 @@ const AddVehiclePage: React.FC = () => {
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                   placeholder="e.g., 2020"
                 />
+              </div>
+              <div>
+                <label
+                  htmlFor="type"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="type"
+                  id="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                >
+                  <option value="">Select Type</option>
+                  <option value="car">Car</option>
+                  <option value="bike">Bike</option>
+                </select>
               </div>
               <div>
                 <label
