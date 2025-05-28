@@ -7,7 +7,7 @@ import type {
   PaymentFormData,
   Vehicle,
 } from '../types';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, isBefore, isAfter, isEqual } from 'date-fns';
 
 // Interface for combined booking and vehicle details
 export interface BookingWithVehicleDetails extends Booking {
@@ -60,11 +60,12 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   fetchUserBookings: async () => {
     try {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error('User not authenticated');
+      const userId = useAuthStore.getState().profile?.id;
+      if (!userId)
+        throw new Error('User not authenticated or profile not loaded');
 
       set({ isLoading: true, error: null });
-      console.log('[fetchUserBookings] Fetching for user:', user.id);
+      console.log('[fetchUserBookings] Fetching for user:', userId);
 
       const { data, error } = await supabase
         .from('bookings')
@@ -79,7 +80,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
           )
         `
         )
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       console.log('[fetchUserBookings] Raw data from Supabase:', data);
@@ -178,21 +179,50 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
   createBooking: async (booking, vehicleId, dailyRate) => {
     try {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error('User not authenticated');
+      const profile = useAuthStore.getState().profile;
+      if (!profile)
+        throw new Error('User not authenticated or profile not loaded');
 
       set({ isLoading: true, error: null });
 
-      // Calculate total price
       const startDate = new Date(booking.startDate);
       const endDate = new Date(booking.endDate);
+
+      // --- Booking Conflict Check ---
+      const { data: conflictingBookings, error: conflictError } = await supabase
+        .from('bookings')
+        .select('id, start_date, end_date, status')
+        .eq('vehicle_id', vehicleId)
+        .neq('status', 'cancelled') // Exclude cancelled bookings
+        .or(
+          `and(start_date.lte.${endDate.toISOString()},end_date.gte.${startDate.toISOString()})`
+        ); // Check for overlapping date ranges
+
+      if (conflictError) {
+        console.error('[createBooking] Conflict check error:', conflictError);
+        throw conflictError;
+      }
+
+      if (conflictingBookings && conflictingBookings.length > 0) {
+        // Found conflicting bookings
+        console.warn(
+          '[createBooking] Booking conflict found:',
+          conflictingBookings
+        );
+        throw new Error(
+          'This vehicle is already booked for some of the selected dates.'
+        );
+      }
+      // --- End Booking Conflict Check ---
+
+      // Calculate total price
       const days = Math.max(1, differenceInDays(endDate, startDate));
       const totalPrice = days * dailyRate;
 
       // Create booking
       const bookingData = {
         vehicle_id: vehicleId,
-        user_id: user.id,
+        user_id: profile.id,
         start_date: booking.startDate,
         end_date: booking.endDate,
         total_price: totalPrice,
@@ -203,21 +233,21 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       const { data, error } = await supabase
         .from('bookings')
-        .insert(bookingData)
+        .insert([bookingData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[createBooking] Supabase insert error:', error);
+        throw error;
+      }
 
-      // Store the current booking data for the flow
-      set({
-        bookingFormData: booking,
-        vehicleId,
-        currentBooking: formatBookingResponse(data),
-      });
+      console.log('[createBooking] Booking created:', data);
 
+      // Return the ID of the newly created booking
       return data.id;
     } catch (error) {
+      console.error('[createBooking] Catch error:', error);
       set({ error: (error as Error).message });
       throw error;
     } finally {

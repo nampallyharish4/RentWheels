@@ -42,7 +42,7 @@ const EditVehiclePage: React.FC = () => {
     isLoading,
     error: storeError,
   } = useVehicleStore();
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
 
   const [formData, setFormData] = useState<EditVehicleFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +65,7 @@ const EditVehiclePage: React.FC = () => {
 
   useEffect(() => {
     if (selectedVehicle && selectedVehicle.id === vehicleId) {
-      if (user && selectedVehicle.ownerId !== user.id) {
+      if (!profile || selectedVehicle.ownerId !== profile.id) {
         setPageMessage('You are not authorized to edit this vehicle.');
         return;
       }
@@ -82,7 +82,7 @@ const EditVehiclePage: React.FC = () => {
       });
       setPageMessage(null);
     }
-  }, [selectedVehicle, vehicleId, user]);
+  }, [selectedVehicle, vehicleId, profile]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -101,14 +101,15 @@ const EditVehiclePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData || !vehicleId || !user) {
+    if (
+      !formData ||
+      !vehicleId ||
+      !profile ||
+      selectedVehicle?.ownerId !== profile.id
+    ) {
       setSubmitError(
         'Form data is missing, or you are not authorized. Please refresh.'
       );
-      return;
-    }
-    if (selectedVehicle && selectedVehicle.ownerId !== user.id) {
-      setSubmitError('You are not authorized to edit this vehicle.');
       return;
     }
 

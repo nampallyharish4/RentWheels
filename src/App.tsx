@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
@@ -17,14 +17,15 @@ import AddVehiclePage from './pages/AddVehiclePage';
 import EditVehiclePage from './pages/EditVehiclePage';
 import EditProfilePage from './pages/EditProfilePage';
 import { useAuthStore } from './store/authStore';
+import PublicRoute from './components/auth/PublicRoute';
 
 function App() {
-  const { loadUser } = useAuthStore();
-  
+  const { loadProfile } = useAuthStore();
+
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-  
+    loadProfile();
+  }, []);
+
   return (
     <Router>
       <Routes>

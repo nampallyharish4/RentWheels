@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, X } from 'lucide-react';
+import Button from './Button';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -37,11 +38,11 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
             <div className="mt-3 text-center sm:mt-5">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
+              <h3 className="text-lg font-bold leading-6 text-secondary-900">
                 {title}
               </h3>
               <div className="mt-2">
-                <p className="text-sm text-gray-500">{message}</p>
+                <p className="text-sm text-secondary-600">{message}</p>
               </div>
             </div>
           </div>
@@ -58,13 +59,9 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
           </div>
 
           <div className="mt-5 sm:mt-6">
-            <button
-              type="button"
-              className="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm"
-              onClick={onClose}
-            >
+            <Button onClick={onClose} className="w-full">
               Got it!
-            </button>
+            </Button>
           </div>
         </div>
       </div>

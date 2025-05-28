@@ -5,6 +5,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import Card, { CardContent, CardHeader, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import SearchableLocationSelect from '../ui/SearchableLocationSelect';
 import { useBookingStore } from '../../store/bookingStore';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { format, addDays, differenceInDays, isValid } from 'date-fns';
@@ -15,112 +16,409 @@ interface BookingFormProps {
   isLoading?: boolean;
 }
 
+// List of locations
+const locations = [
+  'Banjara Hills',
+  'Dilsukhnagar',
+  'Koti',
+  'Punjagutta',
+  'Begumpet',
+  'Jubilee Hills',
+  'Mehdipatnam',
+  'Ameerpet',
+  'Abids',
+  'A C Guards',
+  'Abids Road',
+  'Adarsh Nagar',
+  'Adikmet',
+  'Afzal Gunj',
+  'Aghapura',
+  'Ahmed Nagar',
+  'Akbar Road',
+  'Aliabad',
+  'Amberpet',
+  'Ameerpet X Road',
+  'Anand Nagar Colony',
+  'Ashok Nagar',
+  'Asif Nagar',
+  'Attapur',
+  'Attapur Ring Road',
+  'Auto Nagar',
+  'Azamabad',
+  'Bachpally',
+  'Badi Chowdi',
+  'Bagh Amberpet',
+  'Bagh Lingampally',
+  'Bahadurpura',
+  'Bahadurpally',
+  'Bairamalguda',
+  'Bakaram',
+  'Bala Nagar',
+  'Balapur',
+  'Balkampet',
+  'Bandlaguda',
+  'Bank Street',
+  'Bansilal Pet',
+  'Bansilalpet',
+  'Bapuji Nagar',
+  'Barkas',
+  'Barkatpura',
+  'Basheer Bagh',
+  'Bazar Ghat',
+  'Begum Bazaar',
+  'Bhagya Nagar Colony',
+  'Bharat Nagar',
+  'BHEL',
+  'Bholakpur',
+  'BK Guda',
+  'Boggulakunta',
+  'Bollaram',
+  'Borabanda',
+  'Boyiguda',
+  'Chaderghat',
+  'Chaitanyapuri',
+  'Champapet',
+  'Chanchalguda',
+  'Chanda Nagar',
+  'Chandrayanagutta',
+  'Chappal Bazaar',
+  'Chapel Road',
+  'Char Kaman',
+  'Charminar',
+  'Chatta Bazar',
+  'Chikkadpalli',
+  'Chilakalguda',
+  'Chintal',
+  'Chintal Basti',
+  'Chintalkunta',
+  'Chirag Ali Lane',
+  'Chudi Bazaar',
+  'D D Colony',
+  'Dabeerpura',
+  'Dabeerpura North',
+  'Darus Salam',
+  'Darulshifa',
+  'Defence Colony',
+  'Dharam Karan Road',
+  'Diamond Point',
+  'Dilshad Nagar',
+  'Dilsukhnagar Main Road',
+  'Domalguda',
+  'Doodh Bowli',
+  'Dwarkapuri Colony',
+  'ECIL',
+  'Edi Bazar North',
+  'Erragadda',
+  'Erramanzil',
+  'Erramanzil Colony',
+  'Esamiya Bazaar',
+  'Falaknuma',
+  'Fateh Darwaza',
+  'Fateh Maidan',
+  'Fathenagar',
+  'Feelkhana',
+  'Ferozguda',
+  'Film Nagar',
+  'Gachibowli',
+  'Gaddi Annaram',
+  'Gagan Mahal',
+  'Gaghan Pahad',
+  'Gandhi Nagar',
+  'Gandhipet',
+  'Gandhipet Road',
+  'General Bazaar',
+  'Ghansi Bazaar',
+  'Golconda',
+  'Golconda X Roads',
+  'Gosha Mahal',
+  'Gowliguda',
+  'Gowliguda Chaman',
+  'Greenlands',
+  'Gudimalkapur',
+  'Gudimalkapur New Po',
+  'Gulzar House',
+  'Gun Foundry',
+  'Hafizpet',
+  'Hakimpet',
+  'Hanuman Tekdi',
+  'Haribowli',
+  'Hastinapuram',
+  'Hayat Nagar',
+  'Hitech City',
+  'Hill Fort',
+  'Hill Fort Road',
+  'Himayat Nagar',
+  'Himayat Sagar',
+  'Hmt Road',
+  'Humayun Nagar',
+  'Hussaini Alam',
+  'Hyder Nagar',
+  'Hyderguda',
+  'Ibrahim Bagh',
+  'Ibrahimpatnam',
+  'Inder Bagh',
+  'Indira Park',
+  'Jagadgiri Gutta',
+  'Jagdish Market',
+  'Jahanuma',
+  'Jam Bagh',
+  'Jamia Osmania',
+  'Jawahar Nagar',
+  'Jawaharlal Nehru Road',
+  'Jeedimetla',
+  'Kachiguda',
+  'Kachiguda X Road',
+  'Kakatiya Nagar',
+  'Kalasiguda',
+  'Kali Khabar',
+  'Kali Kaman',
+  'Kalyan Nagar',
+  'Kamala Nagar',
+  'Kamala Puri Colony',
+  'Kamla Nagar',
+  'Kanchan Bagh',
+  'Karmanghat',
+  'Karwan',
+  'Katedan',
+  'Kavadiguda',
+  'Kesav Giri',
+  'Khairatabad',
+  'King Koti',
+  'Kishan Bagh',
+  'Kishan Gunj',
+  'Kompally',
+  'Kondapur',
+  'Kothaguda',
+  'Kothapet',
+  'Kukatpally Housing Board Colony',
+  'Krishna Nagar',
+  'Kukatpally',
+  'Kummari Guda',
+  'Kundan Bagh',
+  'LB Nagar',
+  'LB Stadium',
+  'Laad Bazaar',
+  'Lakdikapul',
+  'Lal Darwaza',
+  'Langer House',
+  'Liberty',
+  'Lingampalli',
+  'Lingampally',
+  'Lower Tank Bund Road',
+  'Machili Kaman',
+  'Madannapet',
+  'Madhapur',
+  'Madhura Nagar',
+  'Madina Colony',
+  'Madinaguda',
+  'Mahankali Street',
+  'Maharaj Gunj',
+  'Mahatma Gandhi Road',
+  'Malakpet',
+  'Mallapur',
+  'Mallepally',
+  'Mangalhat',
+  'Mansoorabad X Road',
+  'Maruti Colony',
+  'Maruthi Nagar',
+  'Masab Tank',
+  'Meerpet',
+  'Mehboob Ganj',
+  'Minister Road',
+  'Mir Alam Mandi',
+  'Miyapur',
+  'Moghalpura',
+  'Moinabad',
+  'Monda Market',
+  'Moosabowli',
+  'Moosapet',
+  'Moosarambagh',
+  'Moti Nagar',
+  'Mozamjahi Market',
+  'Murad Nagar',
+  'Musheerabad',
+  'Mylargadda',
+  'Nagarjuna Hills',
+  'Nagarjuna Sagar Road',
+  'Nagole',
+  'Nallagutta',
+  'Nallakunta',
+  'Namalagundu',
+  'Nampally',
+  'Nampally Station Road',
+  'Narayanguda',
+  'Nayapul Road',
+  'Necklace Road',
+  'Nehru Nagar',
+  'New Boyiguda',
+  'New Malakpet',
+  'New Nagole',
+  'New Nallakunta',
+  'New Osmangunj',
+  'Nimboliadda',
+  'Nizam Shahi Road',
+  'Nizampet',
+  'Nizampet Road',
+  'Noorkhan Bazaar',
+  'Old Boyiguda',
+  'Old Malakpet',
+  'Old Topkhana',
+  'Osman Shahi',
+  'Osmangunj',
+  'Osmania University',
+  'P&T Colony',
+  'Padma Rao Nagar',
+  'Pan Bazar',
+  'Panjagutta',
+  'Paradise',
+  'Paradise Circle',
+  'Patancheru',
+  'Patel Market',
+  'Pathargatti',
+  'Penderghast Road',
+  'Pragathi Nagar',
+  'Prakash Nagar',
+  'Prasanth Nagar',
+  'Purana Pul',
+  'Purani Haveli',
+  'Putlibowli',
+  'Quthbullapur',
+  'RR District',
+  'Raj Bhavan Road',
+  'Rajendra Nagar',
+  'Ram Nagar',
+  'Ram Nagar Cross Road',
+  'Ramachandra Puram',
+  'Ramakrishnapuram',
+  'Ramakrishnapuram Road',
+  'Ramanthapur',
+  'Ramgopalpet',
+  'Ramkote',
+  'Ramnagar Gundu',
+  'Ranga Reddy Nagar',
+  'Rani Gunj',
+  'Rashtrapathi Road',
+  'Rasoolpura',
+  'Red Hills',
+  'Regimental Bazaar',
+  'Rethibowli',
+  'Risala Bazar',
+  'RTC Colony',
+  'RTC X Road',
+  'S R Nagar',
+  'Sagar Road',
+  'Saidabad',
+  'Saifabad',
+  'Saleem Nagar',
+  'Sanath Nagar',
+  'Santosh Nagar',
+  'Saroor Nagar',
+  'Secretariat',
+  'Sitaram Bagh',
+  'Serilingampally',
+  'Shah Ali Banda',
+  'Shahpur Nagar',
+  'Shaikpet',
+  'Shamshabad',
+  'Shamsher Gunj',
+  'Shanker Mutt',
+  'Shanti Nagar',
+  'Shapur Nagar',
+  'Shivaji Nagar',
+  'Shivam Road',
+  'Shivarampally',
+  'Siddarth Nagar',
+  'Siddiamber Bazaar',
+  'Sindhi Colony',
+  'Sitaphal Mandi',
+  'Somajiguda',
+  'Somajiguda Circle',
+  'Sri Krishna Nagar',
+  'Sri Nagar',
+  'Srinagar Colony',
+  'Srinagar Colony Main Road',
+  'Srinivasa Nagar',
+  'Sultan Bazaar',
+  'Talab Katta',
+  'Tank Bund',
+  'Tank Bund Road',
+  'Tara Nagar',
+  'Tarnaka',
+  'Tilak Nagar',
+  'Tilak Road',
+  'Toli Chowki',
+  'Troop Bazaar',
+  'Uppuguda',
+  'Vanasthalipuram',
+  'Vasavi Nagar',
+  'Vengal Rao Nagar',
+  'Venkatapuram',
+  'Vidya Nagar',
+  'Vijaya Nagar Colony',
+  'Vikas Nagar',
+  'Vinayakarao Nagar',
+  'Vittalwadi',
+  'Warasiguda',
+  'Yakutpura',
+  'Yellareddyguda',
+  'Yusuf Bazar',
+  'Yousufguda',
+  'Zamistanpur',
+];
+
 export function BookingForm({ onSubmit, isLoading = false }: BookingFormProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
+    control,
   } = useForm<BookingFormData>();
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <label
-          htmlFor="startDate"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Start Date
-        </label>
-        <input
-          type="date"
-          id="startDate"
-          min={today}
-          {...register('startDate', { required: 'Start date is required' })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-        {errors.startDate && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.startDate.message}
-          </p>
-        )}
-      </div>
+      <Input
+        label="Start Date"
+        id="startDate"
+        type="date"
+        min={today}
+        {...register('startDate', { required: 'Start date is required' })}
+        error={errors.startDate?.message}
+      />
 
-      <div>
-        <label
-          htmlFor="endDate"
-          className="block text-sm font-medium text-gray-700"
-        >
-          End Date
-        </label>
-        <input
-          type="date"
-          id="endDate"
-          min={today}
-          {...register('endDate', { required: 'End date is required' })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-        {errors.endDate && (
-          <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>
-        )}
-      </div>
+      <Input
+        label="End Date"
+        id="endDate"
+        type="date"
+        min={today}
+        {...register('endDate', { required: 'End date is required' })}
+        error={errors.endDate?.message}
+      />
 
-      <div>
-        <label
-          htmlFor="pickupAddress"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Pickup Address
-        </label>
-        <input
-          type="text"
-          id="pickupAddress"
-          {...register('pickupAddress', {
-            required: 'Pickup address is required',
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-        {errors.pickupAddress && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.pickupAddress.message}
-          </p>
-        )}
-      </div>
+      <SearchableLocationSelect
+        label="Pickup Address"
+        id="pickupAddress"
+        options={locations}
+        placeholder="Enter pickup location"
+        name="pickupAddress"
+        control={control}
+        error={errors.pickupAddress?.message}
+      />
 
-      <div>
-        <label
-          htmlFor="dropoffAddress"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Drop-off Address
-        </label>
-        <input
-          type="text"
-          id="dropoffAddress"
-          {...register('dropoffAddress', {
-            required: 'Drop-off address is required',
-          })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-        />
-        {errors.dropoffAddress && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.dropoffAddress.message}
-          </p>
-        )}
-      </div>
+      <SearchableLocationSelect
+        label="Drop-off Address"
+        id="dropoffAddress"
+        options={locations}
+        placeholder="Enter drop-off location"
+        name="dropoffAddress"
+        control={control}
+        error={errors.dropoffAddress?.message}
+      />
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-          isLoading
-            ? 'bg-indigo-400 cursor-not-allowed'
-            : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-        }`}
-      >
+      <Button type="submit" disabled={isLoading} fullWidth>
         {isLoading ? 'Processing...' : 'Book Now'}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -138,6 +436,7 @@ const BookingFormComponent: React.FC = () => {
     handleSubmit,
     watch,
     formState: { errors },
+    control,
   } = useForm<BookingFormData>({
     defaultValues: {
       startDate: format(today, 'yyyy-MM-dd'),
@@ -146,6 +445,9 @@ const BookingFormComponent: React.FC = () => {
       dropoffAddress: '',
     },
   });
+
+  // Add state for booking submission loading
+  const [isBookingLoading, setIsBookingLoading] = React.useState(false);
 
   const startDate = watch('startDate');
   const endDate = watch('endDate');
@@ -186,6 +488,7 @@ const BookingFormComponent: React.FC = () => {
     }
 
     setBookingFormData(data);
+    setIsBookingLoading(true); // Set loading to true on submission start
 
     try {
       const bookingId = await createBooking(
@@ -193,9 +496,13 @@ const BookingFormComponent: React.FC = () => {
         vehicleId,
         selectedVehicle.dailyRate
       );
+      // Navigate to payment page on success
       navigate(`/booking/payment/${bookingId}`);
     } catch (error) {
       console.error('Failed to create booking', error);
+      // Optionally display error message to the user
+    } finally {
+      setIsBookingLoading(false); // Set loading to false when submission is complete
     }
   };
 
@@ -220,7 +527,11 @@ const BookingFormComponent: React.FC = () => {
       </CardHeader>
 
       <CardContent>
-        <BookingForm onSubmit={onSubmit} isLoading={!isDateRangeValid} />
+        {/* Pass the new loading state to BookingForm */}
+        <BookingForm
+          onSubmit={onSubmit}
+          isLoading={isBookingLoading || !isDateRangeValid}
+        />
       </CardContent>
     </Card>
   );

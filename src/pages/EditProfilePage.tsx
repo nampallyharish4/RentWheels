@@ -3,15 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { User, Phone, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Card, { CardContent, CardHeader } from '../components/ui/Card';
-import SuccessModal from '../components/ui/SuccessModal';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import Button from '../components/ui/Button';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
   const { user, profile, updateProfile } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
@@ -24,6 +23,12 @@ const EditProfilePage = () => {
       navigate('/login');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (!profile) {
+      navigate('/login');
+    }
+  }, [profile, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,11 +44,13 @@ const EditProfilePage = () => {
     setError('');
 
     try {
+      if (!profile?.id) {
+        throw new Error('User profile not loaded.');
+      }
       await updateProfile({
-        id: user?.id as string,
+        id: profile.id,
         ...formData,
       });
-      setShowSuccess(true);
     } catch (error) {
       setError('Failed to update profile. Please try again.');
       console.error('Profile update error:', error);
@@ -64,8 +71,10 @@ const EditProfilePage = () => {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Card>
         <CardHeader>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-secondary-900">
+            Edit Profile
+          </h1>
+          <p className="text-sm text-secondary-600">
             Update your personal information
           </p>
         </CardHeader>
@@ -111,30 +120,12 @@ const EditProfilePage = () => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                isLoading
-                  ? 'bg-indigo-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-              }`}
-            >
+            <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? 'Updating...' : 'Update Profile'}
-            </button>
+            </Button>
           </form>
         </CardContent>
       </Card>
-
-      <SuccessModal
-        isOpen={showSuccess}
-        onClose={() => {
-          setShowSuccess(false);
-          navigate('/dashboard');
-        }}
-        title="Profile Updated"
-        message="Your profile has been successfully updated."
-      />
     </div>
   );
 };

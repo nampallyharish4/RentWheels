@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import {
   Car,
@@ -6,7 +6,6 @@ import {
   Plus,
   User,
   Clock,
-  AlertTriangle,
   Edit,
   Trash2,
 } from 'lucide-react';
@@ -15,11 +14,11 @@ import Button from '../ui/Button';
 import { useAuthStore } from '../../store/authStore';
 import { useBookingStore } from '../../store/bookingStore';
 import { useVehicleStore } from '../../store/vehicleStore';
-import { format, differenceInHours, differenceInMilliseconds } from 'date-fns';
-import VehicleCard from '../vehicles/VehicleCard';
-import type { Vehicle, Booking } from '../../types';
+import { format } from 'date-fns';
+import type { Vehicle } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import DeleteAccountModal from '../auth/DeleteAccountModal';
+import EditProfileModal from '../auth/EditProfileModal';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuthStore();
@@ -42,16 +41,9 @@ const Dashboard: React.FC = () => {
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
-  const [now, setNow] = useState(new Date());
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
     useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -90,139 +82,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const bookingsWithDisplayInfo = useMemo(() => {
-    return bookings.map((booking) => {
-      const startDateObj = new Date(booking.startDate);
-      let isBookingCancellable = false;
-      let bookingCountdownText = '';
-      let dynamicStatusText =
-        booking.status.charAt(0).toUpperCase() + booking.status.slice(1);
-      let statusColorClass = '';
-      let hoursUntilStart = 0;
-
-      if (!isNaN(startDateObj.getTime())) {
-        const currentHoursUntilStart = differenceInHours(startDateObj, now);
-        hoursUntilStart = currentHoursUntilStart;
-        isBookingCancellable =
-          (booking.status.toLowerCase() === 'pending' ||
-            booking.status.toLowerCase() === 'confirmed') &&
-          currentHoursUntilStart > 24;
-
-        if (isBookingCancellable) {
-          const diffMs = differenceInMilliseconds(startDateObj, now);
-          const totalSeconds = Math.floor(diffMs / 1000);
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-          bookingCountdownText = ` (${hours}h ${minutes}m ${seconds}s left to cancel)`;
-          dynamicStatusText = 'Pending Booking';
-        }
-      }
-
-      switch (dynamicStatusText.toLowerCase()) {
-        case 'pending booking':
-        case 'pending':
-          statusColorClass = 'bg-yellow-100 text-yellow-800';
-          break;
-        case 'confirmed':
-          statusColorClass = 'bg-green-100 text-green-800';
-          break;
-        case 'completed':
-          statusColorClass = 'bg-blue-100 text-blue-800';
-          break;
-        case 'cancelled':
-          statusColorClass = 'bg-red-100 text-red-800';
-          break;
-        default:
-          statusColorClass = 'bg-secondary-100 text-secondary-700';
-      }
-
-      console.log(`[Dashboard] Booking ID: ${booking.id} Display Info:`, {
-        originalStatus: booking.status,
-        startDate: booking.startDate,
-        parsedStartDate: startDateObj.toISOString(),
-        now: now.toISOString(),
-        hoursUntilStart,
-        isBookingCancellable,
-        dynamicStatusText,
-        bookingCountdownText,
-        condition1_status_check:
-          booking.status === 'pending' || booking.status === 'confirmed',
-        condition2_hours_check: hoursUntilStart > 24,
-      });
-
-      return {
-        ...booking,
-        isBookingCancellable,
-        bookingCountdownText,
-        dynamicStatusText,
-        statusColorClass,
-      };
-    });
-  }, [bookings, now]);
-
-  if (!user || !profile) {
+  if (!profile) {
     return <Navigate to="/login" replace />;
   }
-
-  const renderUserVehicleCard = (vehicle: Vehicle) => (
-    <Card key={vehicle.id} className="overflow-hidden flex flex-col">
-      <img
-        src={
-          vehicle.imageUrl ||
-          'https://via.placeholder.com/400x250?text=No+Image'
-        }
-        alt={`${vehicle.make} ${vehicle.model}`}
-        className="w-full h-48 object-cover"
-      />
-      <CardContent className="p-4 flex-grow flex flex-col justify-between">
-        <div>
-          <h3
-            className="text-lg font-semibold text-secondary-900 truncate"
-            title={`${vehicle.make} ${vehicle.model}`}
-          >
-            {vehicle.make} {vehicle.model}
-          </h3>
-          <p className="text-sm text-secondary-600">
-            {vehicle.year} - {vehicle.location}
-          </p>
-          <p className="text-lg font-bold text-primary-600 mt-1">
-            ₹{vehicle.dailyRate}/day
-          </p>
-          <span
-            className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              vehicle.available
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {vehicle.available ? 'Available' : 'Unavailable'}
-          </span>
-        </div>
-        <div className="mt-4 flex gap-2">
-          <Link to={`/vehicles/edit/${vehicle.id}`} className="flex-1">
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Edit size={14} />}
-              fullWidth
-            >
-              Edit
-            </Button>
-          </Link>
-          <Button
-            variant="dangerOutline"
-            size="sm"
-            leftIcon={<Trash2 size={14} />}
-            onClick={() => openVehicleDeleteModal(vehicle)}
-            fullWidth
-          >
-            Delete
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -283,6 +145,22 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex items-center">
+              <div className="bg-green-100 p-3 rounded-full mr-4">
+                <Car className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm">Listed Vehicles</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {userListedVehicles.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mb-6 border-b border-gray-200">
@@ -315,144 +193,53 @@ const Dashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-                Recent Bookings
+                My Bookings
               </h2>
             </CardHeader>
-
-            {(() => {
-              console.log(
-                '[Dashboard] Rendering bookings. isLoading:',
-                bookingsLoading,
-                'Bookings count:',
-                bookings.length,
-                'Bookings data:',
-                bookings
-              );
-              if (bookingsLoading) {
-                return (
-                  <CardContent className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
-                    <p className="text-secondary-600 mt-4">
-                      Loading your bookings...
-                    </p>
-                  </CardContent>
-                );
-              }
-              if (bookings.length === 0) {
-                return (
-                  <CardContent className="text-center py-12">
-                    <div className="bg-secondary-100 p-3 rounded-full mx-auto w-fit">
-                      <CalendarCheck className="h-8 w-8 text-secondary-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-secondary-900 mt-4">
-                      No Bookings Yet
-                    </h3>
-                    <p className="text-secondary-600 mt-2 max-w-md mx-auto">
-                      You haven't made any bookings yet. Start by browsing
-                      available vehicles and book your first ride!
-                    </p>
-                    <div className="mt-6">
-                      <Link to="/vehicles">
-                        <Button>Browse Vehicles</Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                );
-              }
-              return (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-secondary-200">
-                    <thead className="bg-secondary-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Booking ID
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Dates
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Vehicle
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Status
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Amount
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider"
-                        >
-                          Action
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-secondary-200">
-                      {bookings.map((booking) => (
-                        <tr key={booking.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-900">
-                            {booking.id.substring(0, 8).toUpperCase()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-600">
-                            {format(new Date(booking.startDate), 'MMM dd')} -{' '}
-                            {format(new Date(booking.endDate), 'MMM dd, yyyy')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-600">
-                            {booking.vehicle
-                              ? `${booking.vehicle.make} ${booking.vehicle.model} (${booking.vehicle.year})`
-                              : booking.vehicleId
-                                  .substring(0, 8)
-                                  .toUpperCase() + '...'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                booking.status === 'confirmed'
-                                  ? 'bg-green-100 text-green-800'
-                                  : booking.status === 'completed'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : booking.status === 'cancelled'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}
-                            >
-                              {booking.status.charAt(0).toUpperCase() +
-                                booking.status.slice(1)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-600">
-                            ₹{booking.totalPrice.toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <Link
-                              to={`/booking-details/${booking.id}`}
-                              className="text-primary-600 hover:text-primary-900"
-                            >
-                              View Details
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <CardContent>
+              {bookingsLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              );
-            })()}
+              ) : bookings.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No bookings found
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {bookings.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {booking.vehicle?.make} {booking.vehicle?.model}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(booking.startDate), 'MMM dd')} -{' '}
+                          {format(new Date(booking.endDate), 'MMM dd')}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          booking.status === 'confirmed'
+                            ? 'bg-green-100 text-green-800'
+                            : booking.status === 'completed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : booking.status === 'cancelled'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {booking.status.charAt(0).toUpperCase() +
+                          booking.status.slice(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}
@@ -470,51 +257,81 @@ const Dashboard: React.FC = () => {
                 </Button>
               </Link>
             </CardHeader>
-
-            {vehiclesLoading ? (
-              <CardContent className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
-                <p className="text-secondary-600 mt-4">
-                  Loading your vehicles...
-                </p>
-              </CardContent>
-            ) : dashboardError && !isDeleteModalOpen ? (
-              <CardContent className="text-center py-12">
-                <AlertTriangle
-                  size={48}
-                  className="mx-auto text-red-500 mb-4"
-                />
-                <p className="text-red-700">Error: {dashboardError}</p>
-                <Button
-                  onClick={() => {
-                    setDashboardError(null);
-                    if (profile) {
-                      fetchUserListedVehicles(profile.id);
-                    }
-                  }}
-                  className="mt-4"
-                >
-                  Try Again
-                </Button>
-              </CardContent>
-            ) : userListedVehicles.length === 0 ? (
-              <CardContent className="text-center py-12">
-                <div className="bg-secondary-100 p-3 rounded-full mx-auto w-fit">
-                  <Car className="h-8 w-8 text-secondary-400" />
+            <CardContent>
+              {vehiclesLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-                <h3 className="text-lg font-medium text-secondary-900 mt-4">
-                  No Vehicles Listed
-                </h3>
-                <p className="text-secondary-600 mt-2 max-w-md mx-auto">
-                  You haven't listed any vehicles yet. Start earning by sharing
-                  your vehicle with others!
+              ) : userListedVehicles.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">
+                  No vehicles listed
                 </p>
-              </CardContent>
-            ) : (
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {userListedVehicles.map(renderUserVehicleCard)}
-              </CardContent>
-            )}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userListedVehicles.map((vehicle) => (
+                    <Card
+                      key={vehicle.id}
+                      className="overflow-hidden flex flex-col"
+                    >
+                      <img
+                        src={
+                          vehicle.imageUrl ||
+                          'https://via.placeholder.com/400x250?text=No+Image'
+                        }
+                        alt={`${vehicle.make} ${vehicle.model}`}
+                        className="w-full h-48 object-cover"
+                      />
+                      <CardContent className="p-4 flex-grow flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-secondary-900 truncate">
+                            {vehicle.make} {vehicle.model}
+                          </h3>
+                          <p className="text-sm text-secondary-600">
+                            {vehicle.year} - {vehicle.location}
+                          </p>
+                          <p className="text-lg font-bold text-primary-600 mt-1">
+                            ₹{vehicle.dailyRate}/day
+                          </p>
+                          <span
+                            className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              vehicle.available
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {vehicle.available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <Link
+                            to={`/vehicles/edit/${vehicle.id}`}
+                            className="flex-1"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              leftIcon={<Edit size={14} />}
+                              fullWidth
+                            >
+                              Edit
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="dangerOutline"
+                            size="sm"
+                            leftIcon={<Trash2 size={14} />}
+                            onClick={() => openVehicleDeleteModal(vehicle)}
+                            fullWidth
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}
@@ -550,9 +367,12 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="mt-6 flex justify-end space-x-3">
-              <Link to="/profile">
-                <Button variant="outline">Edit Profile</Button>
-              </Link>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditProfileModalOpen(true)}
+              >
+                Edit Profile
+              </Button>
               <Button
                 variant="dangerOutline"
                 onClick={() => setIsDeleteAccountModalOpen(true)}
@@ -563,6 +383,12 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        currentProfile={profile}
+      />
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

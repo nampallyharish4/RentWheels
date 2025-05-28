@@ -23,7 +23,7 @@ const VehicleDetails: React.FC = () => {
   const navigate = useNavigate();
   const { selectedVehicle, isLoading, error, fetchVehicleById } =
     useVehicleStore();
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const { setVehicleId } = useBookingStore();
 
   React.useEffect(() => {
@@ -80,7 +80,7 @@ const VehicleDetails: React.FC = () => {
     );
   }
 
-  if (selectedVehicle && user && selectedVehicle.ownerId === user.id) {
+  if (selectedVehicle && profile && selectedVehicle.ownerId === profile.id) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
@@ -121,12 +121,12 @@ const VehicleDetails: React.FC = () => {
   } = selectedVehicle;
 
   const handleRentVehicle = () => {
-    if (!user) {
+    if (!profile) {
       navigate('/login');
       return;
     }
 
-    if (selectedVehicle.ownerId === user.id) {
+    if (selectedVehicle.ownerId === profile.id) {
       return;
     }
 

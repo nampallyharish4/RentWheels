@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 interface UserProfile {
   id: string;
   email: string;
-  password: string;
   full_name?: string;
   created_at?: string;
 }
@@ -14,17 +13,17 @@ interface AuthState {
   profile: UserProfile | null;
   isLoading: boolean;
   error: string | null;
+  message: string | null;
 
   // Auth actions
   login: (email: string, password: string) => Promise<void>;
   signup: (
     email: string,
     password: string,
-    profile?: { firstName?: string; lastName?: string }
+    profileData?: { firstName?: string; lastName?: string }
   ) => Promise<void>;
   logout: () => Promise<void>;
   loadProfile: () => Promise<void>;
-  createProfile: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -35,10 +34,11 @@ export const useAuthStore = create<AuthState>()(
       profile: null,
       isLoading: false,
       error: null,
+      message: null,
 
       login: async (email: string, password: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isLoading: true, error: null, message: null });
           console.log('Attempting login with:', { email });
 
           const { data, error } = await supabase.auth.signInWithPassword({
@@ -47,32 +47,24 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (error) {
-            // Check if the error is due to email not being confirmed
             if (error.message.includes('Email not confirmed')) {
               set({
                 error:
                   'Please confirm your email address before signing in. Check your inbox for the confirmation link.',
+                isLoading: false,
               });
               return;
             }
+            set({ error: (error as Error).message, isLoading: false });
             throw error;
           }
 
           if (data.user) {
-            set({
-              user: {
-                id: data.user.id,
-                email: data.user.email || '',
-                emailConfirmed: data.user.email_confirmed_at !== null,
-              },
-            });
-
-            // Load user profile after login
             await get().loadProfile();
+          } else {
+            set({ isLoading: false });
           }
         } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
           set({ isLoading: false });
         }
       },
@@ -80,138 +72,170 @@ export const useAuthStore = create<AuthState>()(
       signup: async (
         email: string,
         password: string,
-        profile?: { firstName?: string; lastName?: string }
+        profileData?: { firstName?: string; lastName?: string }
       ) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isLoading: true, error: null, message: null });
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/login`,
+              emailRedirectTo: `${window.location.origin}/verify-email`,
               data: {
                 email: email,
-                first_name: profile?.firstName,
-                last_name: profile?.lastName,
+                full_name: [profileData?.firstName, profileData?.lastName]
+                  .filter(Boolean)
+                  .join(' '),
               },
             },
           });
 
-          if (error) throw error;
+          if (error) {
+            set({ error: (error as Error).message, isLoading: false });
+            throw error;
+          }
 
           if (data.user) {
-            set({
-              user: {
-                id: data.user.id,
-                email: data.user.email || '',
-                emailConfirmed: data.user.email_confirmed_at !== null,
-              },
-            });
+            // Profile will be created automatically by a trigger on auth.users insert
+            // We don't need to set profile here yet, loadProfile will fetch it after email confirmation
           }
 
           set({
             message:
               'Registration successful! Please check your email to confirm your account.',
+            isLoading: false,
           });
         } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
           set({ isLoading: false });
         }
       },
 
       logout: async () => {
         try {
+          set({ isLoading: true, error: null, message: null });
           const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-          set({ user: null, profile: null });
+          if (error) {
+            set({ error: (error as Error).message, isLoading: false });
+            throw error;
+          }
+          set({ profile: null, isLoading: false });
         } catch (error) {
-          set({ error: (error as Error).message });
+          set({ isLoading: false });
         }
       },
 
       loadProfile: async () => {
-        const { user } = get();
-        if (!user?.id) return;
+        set({ isLoading: true, error: null, message: null });
 
         try {
-          set({ isLoading: true, error: null });
-          const { data, error } = await supabase
+          // First, get the authenticated user from Supabase
+          const {
+            data: { user: authUser },
+            error: userError,
+          } = await supabase.auth.getUser();
+
+          if (userError) {
+            set({ profile: null, isLoading: false, error: userError.message });
+            console.error('Error getting authenticated user:', userError);
+            return;
+          }
+
+          if (!authUser?.id) {
+            // No authenticated user, clear profile state
+            set({ profile: null, isLoading: false, error: null });
+            return;
+          }
+
+          // If there's an authenticated user, fetch their profile from the 'profiles' table
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', user.id)
+            .eq('id', authUser.id)
             .single();
 
-          if (error) throw error;
-          set({ profile: data });
+          if (profileError) {
+            set({
+              profile: null,
+              error: profileError.message,
+              isLoading: false,
+            });
+            console.error('Error fetching profile data:', profileError);
+            return;
+          }
+
+          // If profile data is successfully fetched
+          set({
+            profile: profileData as UserProfile,
+            error: null,
+            isLoading: false,
+          });
         } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      createProfile: async () => {
-        const { user } = get();
-        if (!user?.id) return;
-
-        try {
-          set({ isLoading: true, error: null });
-          const { error } = await supabase.from('profiles').insert([
-            {
-              id: user.id,
-              email: user.email,
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-
-          if (error) throw error;
-          await get().loadProfile();
-        } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
-          set({ isLoading: false });
+          // Catch any unexpected errors during the process
+          console.error('Unexpected error in loadProfile:', error);
+          set({
+            profile: null,
+            error: (error as Error).message,
+            isLoading: false,
+          });
         }
       },
 
       updateProfile: async (updates: Partial<UserProfile>) => {
-        const { user } = get();
-        if (!user?.id) return;
+        const { profile: currentProfile } = get();
+        if (!currentProfile?.id) {
+          set({ error: 'No profile to update', isLoading: false });
+          return;
+        }
+
+        set({ isLoading: true, error: null, message: null });
 
         try {
-          set({ isLoading: true, error: null });
           const { error } = await supabase
             .from('profiles')
             .update({
               ...updates,
               updated_at: new Date().toISOString(),
             })
-            .eq('id', user.id);
+            .eq('id', currentProfile.id);
 
-          if (error) throw error;
+          if (error) {
+            set({ error: (error as Error).message, isLoading: false });
+            throw error;
+          }
+
           await get().loadProfile();
         } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
           set({ isLoading: false });
         }
       },
 
       deleteAccount: async () => {
+        const { profile: currentProfile } = get();
+        if (!currentProfile?.id) {
+          set({ error: 'No account to delete', isLoading: false });
+          return;
+        }
+        set({ isLoading: true, error: null, message: null });
         try {
-          set({ isLoading: true, error: null });
           const { error } = await supabase.rpc('delete_user');
-          if (error) throw error;
-          await get().logout();
+          if (error) {
+            set({ error: (error as Error).message, isLoading: false });
+            throw error;
+          }
+          set({ profile: null, isLoading: false });
         } catch (error) {
-          set({ error: (error as Error).message });
-        } finally {
           set({ isLoading: false });
         }
       },
     }),
     {
       name: 'auth-store',
+      partialize: (state) => ({
+        profile: state.profile,
+        isLoading: state.isLoading,
+        error: state.error,
+        message: state.message,
+      }),
     }
   )
 );

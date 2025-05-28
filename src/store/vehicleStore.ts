@@ -53,15 +53,15 @@ export const useVehicleStore = create<VehicleState>((set, get) => ({
       // Use provided filters or store filters
       const currentFilters = filters || get().filters;
 
-      // Get current user ID from auth store
-      const user = useAuthStore.getState().user;
+      // Get current user profile from auth store
+      const profile = useAuthStore.getState().profile;
 
       // Start building the query
       let query = supabase.from('vehicles').select('*');
 
       // Filter out user's own vehicles if user is logged in
-      if (user) {
-        query = query.neq('owner_id', user.id);
+      if (profile?.id) {
+        query = query.neq('owner_id', profile.id);
       }
 
       // Apply filters
