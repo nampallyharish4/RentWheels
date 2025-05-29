@@ -9,12 +9,9 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-<<<<<<< HEAD
-=======
   XCircle,
   AlertTriangle,
   Package,
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
 } from 'lucide-react';
 import Card, { CardContent, CardHeader, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
@@ -47,12 +44,7 @@ const Dashboard: React.FC = () => {
     error: vehiclesStoreError,
     deleteVehicle,
   } = useVehicleStore();
-<<<<<<< HEAD
-  const [activeTab, setActiveTab] = useState<'bookings' | 'orders'>('bookings');
-=======
-
-  const [activeTab, setActiveTab] = useState<'orders' | 'vehicles'>('orders');
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
+  const [activeTab, setActiveTab] = useState<'bookings' | 'orders' | 'vehicles'>('bookings');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
@@ -211,19 +203,12 @@ const Dashboard: React.FC = () => {
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Clock className="h-6 w-6 text-orange-600" />
               </div>
-<<<<<<< HEAD
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   Active Bookings
                 </h3>
                 <p className="text-2xl font-semibold text-gray-900">
                   {activeBookings.length}
-=======
-              <div>
-                <p className="text-gray-600 text-sm">Active Orders</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'confirmed').length}
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
                 </p>
               </div>
             </div>
@@ -236,19 +221,12 @@ const Dashboard: React.FC = () => {
               <div className="p-3 bg-green-100 rounded-lg">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-<<<<<<< HEAD
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   Completed Trips
                 </h3>
                 <p className="text-2xl font-semibold text-gray-900">
                   {completedTrips.length}
-=======
-              <div>
-                <p className="text-gray-600 text-sm">Completed Orders</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'completed').length}
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
                 </p>
               </div>
             </div>
@@ -294,11 +272,7 @@ const Dashboard: React.FC = () => {
             }`}
             onClick={() => setActiveTab('orders')}
           >
-<<<<<<< HEAD
             My Orders
-=======
-            Vehicle Requests
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
           </button>
         </div>
       </div>
@@ -325,52 +299,9 @@ const Dashboard: React.FC = () => {
                   {userBookings.map((booking) => (
                     <BookingCard
                       key={booking.id}
-<<<<<<< HEAD
                       booking={booking}
                       isOwnerView={false}
                     />
-=======
-                      className="bg-white rounded-lg border border-gray-200 p-4"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-gray-900">
-                              {booking.vehicle?.make} {booking.vehicle?.model}
-                            </h3>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(
-                                booking.status
-                              )}`}
-                            >
-                              {booking.status.charAt(0).toUpperCase() +
-                                booking.status.slice(1)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            {format(
-                              new Date(booking.startDate),
-                              'MMM dd, yyyy'
-                            )}{' '}
-                            -{' '}
-                            {format(new Date(booking.endDate), 'MMM dd, yyyy')}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Total: ₹{booking.totalPrice.toFixed(2)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={`/booking-details/${booking.id}`}
-                            className="text-sm text-primary-600 hover:text-primary-700"
-                          >
-                            View Details
-                          </Link>
-                        </div>
-                      </div>
-                      {renderBookingTimeline(booking)}
-                    </div>
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
                   ))}
                 </div>
               )}
@@ -384,11 +315,7 @@ const Dashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-<<<<<<< HEAD
                 Orders for My Vehicles
-=======
-                Vehicle Booking Requests
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
               </h2>
             </CardHeader>
             <CardContent>
@@ -396,7 +323,6 @@ const Dashboard: React.FC = () => {
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-<<<<<<< HEAD
               ) : ownerBookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
                   No orders for your vehicles found.
@@ -410,63 +336,6 @@ const Dashboard: React.FC = () => {
                       isOwnerView={true}
                     />
                   ))}
-=======
-              ) : bookings.filter((b) => b.status === 'pending').length === 0 ? (
-                <p className="text-gray-500 text-center py-4">
-                  No pending requests
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {bookings
-                    .filter((b) => b.status === 'pending')
-                    .map((booking) => (
-                      <div
-                        key={booking.id}
-                        className="bg-white rounded-lg border border-gray-200 p-4"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 mb-2">
-                              {booking.vehicle?.make} {booking.vehicle?.model}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {format(
-                                new Date(booking.startDate),
-                                'MMM dd, yyyy'
-                              )}{' '}
-                              -{' '}
-                              {format(new Date(booking.endDate), 'MMM dd, yyyy')}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Amount: ₹{booking.totalPrice.toFixed(2)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingAction(booking.id, 'accept')
-                              }
-                              leftIcon={<CheckCircle size={16} />}
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              variant="dangerOutline"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingAction(booking.id, 'reject')
-                              }
-                              leftIcon={<XCircle size={16} />}
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
->>>>>>> 5fce15a080b801b5aa087d4047b009726d6011f6
                 </div>
               )}
             </CardContent>
