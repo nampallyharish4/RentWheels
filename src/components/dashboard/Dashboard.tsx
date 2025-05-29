@@ -44,7 +44,9 @@ const Dashboard: React.FC = () => {
     error: vehiclesStoreError,
     deleteVehicle,
   } = useVehicleStore();
-  const [activeTab, setActiveTab] = useState<'bookings' | 'orders' | 'vehicles'>('bookings');
+  const [activeTab, setActiveTab] = useState<
+    'bookings' | 'orders' | 'vehicles'
+  >('bookings');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
