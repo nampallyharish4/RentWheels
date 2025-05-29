@@ -8,14 +8,18 @@ import {
   Clock,
   Edit,
   Trash2,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Package,
 } from 'lucide-react';
-import Card, { CardContent, CardHeader } from '../ui/Card';
+import Card, { CardContent, CardHeader, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 import { useAuthStore } from '../../store/authStore';
 import { useBookingStore } from '../../store/bookingStore';
 import { useVehicleStore } from '../../store/vehicleStore';
 import { format } from 'date-fns';
-import type { Vehicle } from '../../types';
+import type { Vehicle, Booking } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import DeleteAccountModal from '../auth/DeleteAccountModal';
 import EditProfileModal from '../auth/EditProfileModal';
@@ -26,6 +30,7 @@ const Dashboard: React.FC = () => {
     bookings,
     fetchUserBookings,
     isLoading: bookingsLoading,
+    updateBooking,
   } = useBookingStore();
   const {
     userListedVehicles,
@@ -34,9 +39,8 @@ const Dashboard: React.FC = () => {
     error: vehiclesStoreError,
     deleteVehicle,
   } = useVehicleStore();
-  const [activeTab, setActiveTab] = useState<'bookings' | 'vehicles'>(
-    'bookings'
-  );
+
+  const [activeTab, setActiveTab] = useState<'orders' | 'vehicles'>('orders');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
@@ -52,34 +56,98 @@ const Dashboard: React.FC = () => {
     }
   }, [profile, fetchUserBookings, fetchUserListedVehicles]);
 
-  useEffect(() => {
-    if (vehiclesStoreError) {
-      setDashboardError(vehiclesStoreError);
+  const handleBookingAction = async (
+    bookingId: string,
+    action: 'accept' | 'reject'
+  ) => {
+    try {
+      await updateBooking(bookingId, {
+        status: action === 'accept' ? 'confirmed' : 'cancelled',
+        ownerDecision: action === 'accept' ? 'accepted' : 'rejected',
+      });
+      fetchUserBookings(); // Refresh bookings after update
+    } catch (error) {
+      setDashboardError(
+        `Failed to ${action} booking: ${(error as Error).message}`
+      );
     }
-  }, [vehiclesStoreError]);
-
-  const openVehicleDeleteModal = (vehicle: Vehicle) => {
-    setVehiclePendingDeletion(vehicle);
-    setDashboardError(null);
-    setIsDeleteModalOpen(true);
   };
 
-  const closeVehicleDeleteModal = () => {
-    setVehiclePendingDeletion(null);
-    setIsDeleteModalOpen(false);
+  const getStatusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'completed':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
   };
 
-  const confirmVehicleDelete = async () => {
-    if (vehiclePendingDeletion) {
-      try {
-        await deleteVehicle(vehiclePendingDeletion.id);
-        closeVehicleDeleteModal();
-      } catch (error) {
-        setDashboardError(
-          (error as Error).message || 'Failed to delete vehicle.'
-        );
-      }
-    }
+  const renderBookingTimeline = (booking: Booking) => {
+    const timelineSteps = [
+      {
+        status: 'pending',
+        label: 'Booking Requested',
+        icon: Clock,
+        completed: true,
+      },
+      {
+        status: 'confirmed',
+        label: 'Owner Approved',
+        icon: CheckCircle,
+        completed: booking.status === 'confirmed',
+      },
+      {
+        status: 'completed',
+        label: 'Rental Completed',
+        icon: Package,
+        completed: booking.status === 'completed',
+      },
+    ];
+
+    return (
+      <div className="mt-4">
+        <div className="relative">
+          <div className="absolute left-1/2 h-full w-px -translate-x-1/2 bg-gray-200" />
+          <div className="space-y-8 py-3">
+            {timelineSteps.map((step, index) => (
+              <div
+                key={step.status}
+                className={`flex items-center ${
+                  index % 2 === 0 ? 'flex-row-reverse' : ''
+                }`}
+              >
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                    step.completed
+                      ? 'bg-green-100 text-green-600'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  <step.icon size={16} />
+                </div>
+                <div
+                  className={`flex-1 ${
+                    index % 2 === 0 ? 'text-right pr-4' : 'pl-4'
+                  }`}
+                >
+                  <p
+                    className={`text-sm font-medium ${
+                      step.completed ? 'text-gray-900' : 'text-gray-500'
+                    }`}
+                  >
+                    {step.label}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (!profile) {
@@ -121,7 +189,7 @@ const Dashboard: React.FC = () => {
                 <CalendarCheck className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Active Bookings</p>
+                <p className="text-gray-600 text-sm">Active Orders</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {bookings.filter((b) => b.status === 'confirmed').length}
                 </p>
@@ -137,7 +205,7 @@ const Dashboard: React.FC = () => {
                 <Clock className="h-6 w-6 text-gray-600" />
               </div>
               <div>
-                <p className="text-gray-600 text-sm">Completed Trips</p>
+                <p className="text-gray-600 text-sm">Completed Orders</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {bookings.filter((b) => b.status === 'completed').length}
                 </p>
@@ -167,13 +235,13 @@ const Dashboard: React.FC = () => {
         <div className="flex space-x-8">
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'bookings'
+              activeTab === 'orders'
                 ? 'border-orange-600 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => setActiveTab('bookings')}
+            onClick={() => setActiveTab('orders')}
           >
-            My Bookings
+            My Orders
           </button>
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -183,17 +251,17 @@ const Dashboard: React.FC = () => {
             }`}
             onClick={() => setActiveTab('vehicles')}
           >
-            My Vehicles
+            Vehicle Requests
           </button>
         </div>
       </div>
 
-      {activeTab === 'bookings' && (
+      {activeTab === 'orders' && (
         <div>
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-                My Bookings
+                My Orders
               </h2>
             </CardHeader>
             <CardContent>
@@ -203,38 +271,52 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : bookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
-                  No bookings found
+                  No orders found
                 </p>
               ) : (
                 <div className="space-y-4">
                   {bookings.map((booking) => (
                     <div
                       key={booking.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="bg-white rounded-lg border border-gray-200 p-4"
                     >
-                      <div>
-                        <p className="font-medium">
-                          {booking.vehicle?.make} {booking.vehicle?.model}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {format(new Date(booking.startDate), 'MMM dd')} -{' '}
-                          {format(new Date(booking.endDate), 'MMM dd')}
-                        </p>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900">
+                              {booking.vehicle?.make} {booking.vehicle?.model}
+                            </h3>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(
+                                booking.status
+                              )}`}
+                            >
+                              {booking.status.charAt(0).toUpperCase() +
+                                booking.status.slice(1)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {format(
+                              new Date(booking.startDate),
+                              'MMM dd, yyyy'
+                            )}{' '}
+                            -{' '}
+                            {format(new Date(booking.endDate), 'MMM dd, yyyy')}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Total: ₹{booking.totalPrice.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/booking-details/${booking.id}`}
+                            className="text-sm text-primary-600 hover:text-primary-700"
+                          >
+                            View Details
+                          </Link>
+                        </div>
                       </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-100 text-green-800'
-                            : booking.status === 'completed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : booking.status === 'cancelled'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {booking.status.charAt(0).toUpperCase() +
-                          booking.status.slice(1)}
-                      </span>
+                      {renderBookingTimeline(booking)}
                     </div>
                   ))}
                 </div>
@@ -247,88 +329,71 @@ const Dashboard: React.FC = () => {
       {activeTab === 'vehicles' && (
         <div>
           <Card>
-            <CardHeader className="flex justify-between items-center">
+            <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-                My Listed Vehicles
+                Vehicle Booking Requests
               </h2>
-              <Link to="/vehicles/add">
-                <Button size="sm" leftIcon={<Plus size={16} />}>
-                  List New Vehicle
-                </Button>
-              </Link>
             </CardHeader>
             <CardContent>
               {vehiclesLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              ) : userListedVehicles.length === 0 ? (
+              ) : bookings.filter((b) => b.status === 'pending').length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
-                  No vehicles listed
+                  No pending requests
                 </p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userListedVehicles.map((vehicle) => (
-                    <Card
-                      key={vehicle.id}
-                      className="overflow-hidden flex flex-col"
-                    >
-                      <img
-                        src={
-                          vehicle.imageUrl ||
-                          'https://via.placeholder.com/400x250?text=No+Image'
-                        }
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        className="w-full h-48 object-cover"
-                      />
-                      <CardContent className="p-4 flex-grow flex flex-col justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-secondary-900 truncate">
-                            {vehicle.make} {vehicle.model}
-                          </h3>
-                          <p className="text-sm text-secondary-600">
-                            {vehicle.year} - {vehicle.location}
-                          </p>
-                          <p className="text-lg font-bold text-primary-600 mt-1">
-                            ₹{vehicle.dailyRate}/day
-                          </p>
-                          <span
-                            className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              vehicle.available
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {vehicle.available ? 'Available' : 'Unavailable'}
-                          </span>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                          <Link
-                            to={`/vehicles/edit/${vehicle.id}`}
-                            className="flex-1"
-                          >
+                <div className="space-y-4">
+                  {bookings
+                    .filter((b) => b.status === 'pending')
+                    .map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="bg-white rounded-lg border border-gray-200 p-4"
+                      >
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 mb-2">
+                              {booking.vehicle?.make} {booking.vehicle?.model}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {format(
+                                new Date(booking.startDate),
+                                'MMM dd, yyyy'
+                              )}{' '}
+                              -{' '}
+                              {format(new Date(booking.endDate), 'MMM dd, yyyy')}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Amount: ₹{booking.totalPrice.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              leftIcon={<Edit size={14} />}
-                              fullWidth
+                              onClick={() =>
+                                handleBookingAction(booking.id, 'accept')
+                              }
+                              leftIcon={<CheckCircle size={16} />}
                             >
-                              Edit
+                              Accept
                             </Button>
-                          </Link>
-                          <Button
-                            variant="dangerOutline"
-                            size="sm"
-                            leftIcon={<Trash2 size={14} />}
-                            onClick={() => openVehicleDeleteModal(vehicle)}
-                            fullWidth
-                          >
-                            Delete
-                          </Button>
+                            <Button
+                              variant="dangerOutline"
+                              size="sm"
+                              onClick={() =>
+                                handleBookingAction(booking.id, 'reject')
+                              }
+                              leftIcon={<XCircle size={16} />}
+                            >
+                              Reject
+                            </Button>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    ))}
                 </div>
               )}
             </CardContent>
@@ -392,15 +457,15 @@ const Dashboard: React.FC = () => {
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
-        onClose={closeVehicleDeleteModal}
-        onConfirm={confirmVehicleDelete}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (vehiclePendingDeletion) {
+            deleteVehicle(vehiclePendingDeletion.id);
+            setIsDeleteModalOpen(false);
+          }
+        }}
         title="Confirm Vehicle Deletion"
-        message={
-          `Are you sure you want to delete this vehicle: ${vehiclePendingDeletion?.make} ${vehiclePendingDeletion?.model}?\nThis action cannot be undone.` +
-          (dashboardError && isDeleteModalOpen
-            ? `\n\nError: ${dashboardError}`
-            : '')
-        }
+        message={`Are you sure you want to delete this vehicle: ${vehiclePendingDeletion?.make} ${vehiclePendingDeletion?.model}? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
       />

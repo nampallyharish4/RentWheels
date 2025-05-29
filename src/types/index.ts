@@ -22,13 +22,8 @@ export interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status:
-    | 'pending'
-    | 'confirmed'
-    | 'completed'
-    | 'cancelled'
-    | 'owner-approved'
-    | 'owner-rejected';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  ownerDecision?: 'pending' | 'accepted' | 'rejected';
   pickupAddress: string;
   dropoffAddress: string;
   paymentId: string | null;
