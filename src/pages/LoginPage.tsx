@@ -8,6 +8,7 @@ import Card, {
 } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { useAuthStore } from '../store/authStore';
+import SuccessModal from '../components/ui/SuccessModal';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,13 +36,18 @@ const LoginPage = () => {
 
     try {
       await login(formData.email, formData.password);
-      navigate('/');
+      setShowSuccessModal(true);
     } catch (error) {
       setError('Invalid email or password. Please try again.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false);
+    navigate('/');
   };
 
   return (
@@ -137,6 +144,13 @@ const LoginPage = () => {
           </Link>
         </div>
       </div>
+
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        title="Login Successful!"
+        message="You have successfully logged in."
+      />
     </div>
   );
 };

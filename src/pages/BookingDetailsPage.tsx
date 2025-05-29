@@ -8,6 +8,10 @@ import {
   XCircle,
   Info,
   AlertTriangle,
+  Calendar,
+  Car,
+  User,
+  CreditCard,
 } from 'lucide-react';
 import { format, differenceInHours, differenceInMilliseconds } from 'date-fns';
 import Button from '../components/ui/Button';
@@ -268,6 +272,10 @@ const BookingDetailsPage: React.FC = () => {
     }
   };
 
+  const handleProceedToPayment = () => {
+    navigate(`/booking/payment/${bookingId}`);
+  };
+
   return (
     <div className="min-h-screen bg-secondary-50 py-8 px-4">
       <Card className="max-w-3xl mx-auto shadow-lg">
@@ -415,6 +423,13 @@ const BookingDetailsPage: React.FC = () => {
               Cancel Booking{countdownText}
             </Button>
           )}
+          <Button
+            onClick={handleProceedToPayment}
+            className="bg-orange-600 text-white hover:bg-orange-700"
+            leftIcon={<CreditCard size={20} />}
+          >
+            Proceed to Payment
+          </Button>
         </CardFooter>
       </Card>
       <ConfirmationModal

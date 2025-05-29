@@ -27,9 +27,13 @@ interface BookingCardProps {
 const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   isOwnerView,
+  onAction,
   onMessageClick,
 }) => {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -97,21 +101,44 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const timelineSteps = getTimelineSteps(booking.status);
 
   // Get actions from the store
-  const { acceptBooking, rejectBooking, isLoading, cancelBooking } =
-    useBookingStore();
+  const { isLoading: storeIsLoading, cancelBooking } = useBookingStore(); // Renamed isLoading to avoid conflict
 
-  const handleAccept = () => {
-    acceptBooking(booking.id);
+  const handleAccept = async () => {
+    if (onAction) {
+      setIsAccepting(true);
+      setActionError(null);
+      try {
+        await onAction(booking.id, 'accept');
+      } catch (error) {
+        console.error('Error accepting booking:', error);
+        setActionError('Failed to accept booking.');
+      } finally {
+        setIsAccepting(false);
+      }
+    }
   };
 
-  const handleReject = () => {
-    rejectBooking(booking.id);
+  const handleReject = async () => {
+    if (onAction) {
+      setIsRejecting(true);
+      setActionError(null);
+      try {
+        await onAction(booking.id, 'reject');
+      } catch (error) {
+        console.error('Error rejecting booking:', error);
+        setActionError('Failed to reject booking.');
+      } finally {
+        setIsRejecting(false);
+      }
+    }
   };
 
   const handleCancel = () => {
     // Add confirmation modal later if needed
     cancelBooking(booking.id);
   };
+
+  const isActionInProgress = isAccepting || isRejecting || storeIsLoading;
 
   return (
     <Card className="overflow-hidden">
@@ -136,6 +163,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
       </div>
 
       <CardContent className="p-3">
+        {actionError && (
+          <div className="bg-red-100 text-red-700 p-2 text-sm rounded mb-3">
+            {actionError}
+          </div>
+        )}
         <div className="mb-2">
           <h3 className="text-base font-semibold text-gray-900 mb-1">
             {booking.vehicle?.make} {booking.vehicle?.model}
@@ -205,18 +237,18 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     <Button
                       variant="success"
                       size="sm"
-                      onClick={() => onAction?.(booking.id, 'accept')}
-                      disabled={isLoading}
+                      onClick={handleAccept}
+                      disabled={isActionInProgress}
                     >
-                      Accept
+                      {isAccepting ? 'Accepting...' : 'Accept'}
                     </Button>
                     <Button
                       variant="dangerOutline"
                       size="sm"
-                      onClick={() => onAction?.(booking.id, 'reject')}
-                      disabled={isLoading}
+                      onClick={handleReject}
+                      disabled={isActionInProgress}
                     >
-                      Reject
+                      {isRejecting ? 'Rejecting...' : 'Reject'}
                     </Button>
                   </>
                 )
@@ -226,7 +258,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     variant="danger"
                     size="sm"
                     onClick={handleCancel}
-                    disabled={isLoading}
+                    disabled={isActionInProgress}
                     leftIcon={<Trash2 size={12} />}
                   >
                     Cancel

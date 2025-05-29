@@ -20,6 +20,7 @@ const Dashboard: React.FC = () => {
     fetchOwnerBookings,
     isLoading: bookingsLoading,
     updateBooking,
+    setOwnerBookings,
   } = useBookingStore();
   const { userListedVehicles, fetchUserListedVehicles } = useVehicleStore();
   const [activeTab, setActiveTab] = useState<'bookings' | 'orders'>('orders');
@@ -52,10 +53,27 @@ const Dashboard: React.FC = () => {
         status: action === 'accept' ? 'confirmed' : 'cancelled',
         ownerDecision: action === 'accept' ? 'accepted' : 'rejected',
       });
+
+      // Optimistically update the local state
+      setOwnerBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.id === bookingId
+            ? {
+                ...booking,
+                status: action === 'accept' ? 'confirmed' : 'cancelled',
+              }
+            : booking
+        )
+      );
+
+      // Fetch updated data from the backend as a fallback
       fetchUserBookings();
       fetchOwnerBookings();
     } catch (error) {
       console.error(`Failed to ${action} booking:`, error);
+      // If optimistic update happened, you might want to revert it here
+      // For now, we'll just refetch from the backend to be safe
+      fetchOwnerBookings();
     }
   };
 

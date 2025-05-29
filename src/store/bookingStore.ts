@@ -342,9 +342,13 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   updateBooking: async (id, booking) => {
     try {
       set({ isLoading: true, error: null });
+      // Explicitly exclude ownerDecision from the update payload
+      const updatePayload = { ...booking };
+      delete updatePayload.ownerDecision;
+
       const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update(booking)
+        .update(updatePayload)
         .eq('id', id)
         .select();
 
@@ -355,8 +359,8 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       // Optionally update the state with the modified booking
       // For simplicity, we might refetch bookings after important updates
-      get().fetchUserBookings();
-      get().fetchOwnerBookings();
+      // get().fetchUserBookings(); // Removed redundant fetch
+      // get().fetchOwnerBookings(); // Removed redundant fetch
     } catch (error) {
       console.error('[updateBooking] Catch error:', error);
       set({ error: (error as Error).message });
@@ -370,6 +374,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      // Explicitly exclude ownerDecision, though it should not be present for a cancel
       const { error } = await supabase // Removed unused 'data'
         .from('bookings')
         .update({ status: 'cancelled' })
@@ -524,9 +529,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   acceptBooking: async (bookingId) => {
     try {
       set({ isLoading: true, error: null });
+      // Explicitly exclude ownerDecision
       const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update({ status: 'confirmed', ownerDecision: 'accepted' })
+        .update({ status: 'confirmed' })
         .eq('id', bookingId)
         .select()
         .single();
@@ -547,9 +553,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   rejectBooking: async (bookingId) => {
     try {
       set({ isLoading: true, error: null });
+      // Explicitly exclude ownerDecision
       const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update({ status: 'cancelled', ownerDecision: 'rejected' })
+        .update({ status: 'cancelled' })
         .eq('id', bookingId)
         .select()
         .single();
@@ -564,6 +571,30 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       set({ error: (error as Error).message });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  handleBookingAction: async (bookingId, action) => {
+    try {
+      // Pass only the status to updateBooking, ownerDecision is not needed
+      await get().updateBooking(bookingId, {
+        status: action === 'accept' ? 'confirmed' : 'cancelled',
+      });
+
+      // Optimistically update the local state in Dashboard component
+      // No need to do it here in the store, as the action is handled in the component
+      // and it calls setOwnerBookings there.
+
+      // The fetch calls below are sufficient for eventual consistency if optimistic update fails.
+      // get().fetchUserBookings(); // Redundant fetch
+      // get().fetchOwnerBookings(); // Redundant fetch
+    } catch (error) {
+      console.error(
+        `[handleBookingAction] Failed to ${action} booking:`,
+        error
+      );
+      // Error is already set in updateBooking, no need to set again here.
+      throw error; // Re-throw to be caught by the component
     }
   },
 }));

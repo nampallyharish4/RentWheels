@@ -43,14 +43,14 @@ function App() {
           {/* Verify email route - accessible after signup */}
           <Route path="verify-email" element={<VerifyEmailPage />} />
           <Route path="book-vehicle/:vehicleId" element={<BookingPage />} />
-          <Route path="booking/payment/:id" element={<PaymentPage />} />
-          <Route
-            path="booking/confirmation/:bookingId"
-            element={<BookingConfirmationPage />}
-          />
           <Route
             path="booking-details/:bookingId"
             element={<BookingDetailsPage />}
+          />
+          <Route path="booking/payment/:bookingId" element={<PaymentPage />} />
+          <Route
+            path="booking/confirmation/:bookingId"
+            element={<BookingConfirmationPage />}
           />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<EditProfilePage />} />
