@@ -13,8 +13,8 @@ const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const navLinks = [
-    { name: 'Home', path: '/', icon: <Home size={18} /> },
-    { name: 'Vehicles', path: '/vehicles', icon: <Car size={18} /> },
+    { name: 'Home', path: '/', icon: <Home size={24} /> },
+    { name: 'Vehicles', path: '/vehicles', icon: <Car size={24} /> },
   ];
 
   const handleLogout = async () => {
@@ -26,62 +26,62 @@ const Navbar: React.FC = () => {
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-20">
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center">
-              <Car className="h-8 w-8 text-orange-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">
+              <Car className="h-10 w-10 text-orange-600" />
+              <span className="ml-3 text-2xl font-bold text-gray-900">
                 RentWheels
               </span>
             </Link>
           </div>
 
           {/* Desktop navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-6">
+          <div className="hidden md:flex md:items-center md:space-x-12">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                className={`flex items-center px-6 py-3 rounded-md text-lg font-medium ${
                   isActive(link.path)
                     ? 'text-orange-700 bg-orange-50'
                     : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
                 } transition-colors duration-200`}
               >
-                <span className="mr-1.5">{link.icon}</span>
+                <span className="mr-3">{link.icon}</span>
                 {link.name}
               </Link>
             ))}
 
             {profile ? (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-8">
                 <Link to="/dashboard">
                   <Button
                     variant="outline"
-                    size="sm"
-                    leftIcon={<User size={16} />}
+                    size="lg"
+                    leftIcon={<User size={20} />}
                     className="text-orange-600 border-orange-600 hover:bg-orange-50"
                   >
                     Dashboard
                   </Button>
                 </Link>
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="danger"
+                  size="lg"
                   onClick={handleLogout}
-                  className="text-gray-600 hover:text-orange-600"
-                  leftIcon={<LogOut size={16} />}
+                  className="text-white hover:bg-red-700"
+                  leftIcon={<LogOut size={20} />}
                 >
                   Sign Out
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-8">
                 <Link to="/login">
                   <Button
                     variant="outline"
-                    size="sm"
-                    leftIcon={<LogIn size={16} />}
+                    size="lg"
+                    leftIcon={<LogIn size={20} />}
                     className="text-orange-600 border-orange-600 hover:bg-orange-50"
                   >
                     Sign In
@@ -89,7 +89,7 @@ const Navbar: React.FC = () => {
                 </Link>
                 <Link to="/signup">
                   <Button
-                    size="sm"
+                    size="lg"
                     className="bg-orange-600 text-white hover:bg-orange-700"
                   >
                     Sign Up
@@ -100,13 +100,13 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-500"
             >
               <span className="sr-only">Open main menu</span>
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
           </div>
         </div>
@@ -115,19 +115,19 @@ const Navbar: React.FC = () => {
       {/* Mobile menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 animate-fade-in">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className="px-2 pt-2 pb-3 space-y-3 sm:px-3">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
+                className={`flex items-center px-6 py-4 rounded-md text-lg font-medium ${
                   isActive(link.path)
                     ? 'text-orange-700 bg-orange-50'
                     : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <span className="mr-2">{link.icon}</span>
+                <span className="mr-3">{link.icon}</span>
                 {link.name}
               </Link>
             ))}
@@ -136,17 +136,17 @@ const Navbar: React.FC = () => {
               <>
                 <Link
                   to="/dashboard"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  className="flex items-center px-6 py-4 rounded-md text-lg font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <User size={18} className="mr-2" />
+                  <User size={24} className="mr-3" />
                   Dashboard
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  className="w-full flex items-center px-6 py-4 rounded-md text-lg font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  <LogOut size={18} className="mr-2" />
+                  <LogOut size={24} className="mr-3" />
                   Sign Out
                 </button>
               </>
@@ -154,15 +154,15 @@ const Navbar: React.FC = () => {
               <>
                 <Link
                   to="/login"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  className="flex items-center px-6 py-4 rounded-md text-lg font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <LogIn size={18} className="mr-2" />
+                  <LogIn size={24} className="mr-3" />
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  className="flex items-center px-6 py-4 rounded-md text-lg font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign Up

@@ -8,6 +8,7 @@ import {
   Clock,
   Edit,
   Trash2,
+  CheckCircle,
 } from 'lucide-react';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
@@ -19,12 +20,17 @@ import type { Vehicle } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import DeleteAccountModal from '../auth/DeleteAccountModal';
 import EditProfileModal from '../auth/EditProfileModal';
+import BookingCard from './BookingCard';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuthStore();
   const {
-    bookings,
+    bookings: userBookings,
+    ownerBookings,
     fetchUserBookings,
+    fetchOwnerBookings,
+    acceptBooking,
+    rejectBooking,
     isLoading: bookingsLoading,
   } = useBookingStore();
   const {
@@ -34,9 +40,7 @@ const Dashboard: React.FC = () => {
     error: vehiclesStoreError,
     deleteVehicle,
   } = useVehicleStore();
-  const [activeTab, setActiveTab] = useState<'bookings' | 'vehicles'>(
-    'bookings'
-  );
+  const [activeTab, setActiveTab] = useState<'bookings' | 'orders'>('bookings');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
@@ -45,12 +49,15 @@ const Dashboard: React.FC = () => {
     useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
+  console.log('[Dashboard] User listed vehicles:', userListedVehicles);
+
   useEffect(() => {
     if (profile) {
       fetchUserBookings();
+      fetchOwnerBookings();
       fetchUserListedVehicles(profile.id);
     }
-  }, [profile, fetchUserBookings, fetchUserListedVehicles]);
+  }, [profile, fetchUserBookings, fetchOwnerBookings, fetchUserListedVehicles]);
 
   useEffect(() => {
     if (vehiclesStoreError) {
@@ -86,6 +93,14 @@ const Dashboard: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
+  const activeBookings = userBookings.filter(
+    (booking) => booking.status === 'pending' || booking.status === 'confirmed'
+  );
+  const completedTrips = userBookings.filter(
+    (booking) => booking.status === 'completed'
+  );
+  const listedVehicles = userListedVehicles;
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -115,15 +130,17 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-orange-100 p-3 rounded-full mr-4">
-                <CalendarCheck className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <Clock className="h-6 w-6 text-orange-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Active Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'confirmed').length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Active Bookings
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {activeBookings.length}
                 </p>
               </div>
             </div>
@@ -131,15 +148,17 @@ const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-gray-100 p-3 rounded-full mr-4">
-                <Clock className="h-6 w-6 text-gray-600" />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Completed Trips</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'completed').length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Completed Trips
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {completedTrips.length}
                 </p>
               </div>
             </div>
@@ -147,15 +166,17 @@ const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-green-100 p-3 rounded-full mr-4">
-                <Car className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Car className="h-6 w-6 text-blue-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Listed Vehicles</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {userListedVehicles.length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Listed Vehicles
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {listedVehicles.length}
                 </p>
               </div>
             </div>
@@ -177,13 +198,13 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'vehicles'
+              activeTab === 'orders'
                 ? 'border-orange-600 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => setActiveTab('vehicles')}
+            onClick={() => setActiveTab('orders')}
           >
-            My Vehicles
+            My Orders
           </button>
         </div>
       </div>
@@ -201,41 +222,18 @@ const Dashboard: React.FC = () => {
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              ) : bookings.length === 0 ? (
+              ) : userBookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
                   No bookings found
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {bookings.map((booking) => (
-                    <div
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userBookings.map((booking) => (
+                    <BookingCard
                       key={booking.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium">
-                          {booking.vehicle?.make} {booking.vehicle?.model}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {format(new Date(booking.startDate), 'MMM dd')} -{' '}
-                          {format(new Date(booking.endDate), 'MMM dd')}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-100 text-green-800'
-                            : booking.status === 'completed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : booking.status === 'cancelled'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {booking.status.charAt(0).toUpperCase() +
-                          booking.status.slice(1)}
-                      </span>
-                    </div>
+                      booking={booking}
+                      isOwnerView={false}
+                    />
                   ))}
                 </div>
               )}
@@ -244,90 +242,31 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'vehicles' && (
+      {activeTab === 'orders' && (
         <div>
           <Card>
-            <CardHeader className="flex justify-between items-center">
+            <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-                My Listed Vehicles
+                Orders for My Vehicles
               </h2>
-              <Link to="/vehicles/add">
-                <Button size="sm" leftIcon={<Plus size={16} />}>
-                  List New Vehicle
-                </Button>
-              </Link>
             </CardHeader>
             <CardContent>
-              {vehiclesLoading ? (
+              {bookingsLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              ) : userListedVehicles.length === 0 ? (
+              ) : ownerBookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
-                  No vehicles listed
+                  No orders for your vehicles found.
                 </p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {userListedVehicles.map((vehicle) => (
-                    <Card
-                      key={vehicle.id}
-                      className="overflow-hidden flex flex-col"
-                    >
-                      <img
-                        src={
-                          vehicle.imageUrl ||
-                          'https://via.placeholder.com/400x250?text=No+Image'
-                        }
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        className="w-full h-48 object-cover"
-                      />
-                      <CardContent className="p-4 flex-grow flex flex-col justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-secondary-900 truncate">
-                            {vehicle.make} {vehicle.model}
-                          </h3>
-                          <p className="text-sm text-secondary-600">
-                            {vehicle.year} - {vehicle.location}
-                          </p>
-                          <p className="text-lg font-bold text-primary-600 mt-1">
-                            ₹{vehicle.dailyRate}/day
-                          </p>
-                          <span
-                            className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              vehicle.available
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {vehicle.available ? 'Available' : 'Unavailable'}
-                          </span>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                          <Link
-                            to={`/vehicles/edit/${vehicle.id}`}
-                            className="flex-1"
-                          >
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              leftIcon={<Edit size={14} />}
-                              fullWidth
-                            >
-                              Edit
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="dangerOutline"
-                            size="sm"
-                            leftIcon={<Trash2 size={14} />}
-                            onClick={() => openVehicleDeleteModal(vehicle)}
-                            fullWidth
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {ownerBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      isOwnerView={true}
+                    />
                   ))}
                 </div>
               )}
