@@ -135,6 +135,11 @@ export const useAuthStore = create<AuthState>()(
           } = await supabase.auth.getUser();
 
           if (userError) {
+            // Handle "Auth session missing!" as a non-error state
+            if (userError.message === 'Auth session missing!') {
+              set({ profile: null, isLoading: false, error: null });
+              return;
+            }
             set({ profile: null, isLoading: false, error: userError.message });
             console.error('Error getting authenticated user:', userError);
             return;

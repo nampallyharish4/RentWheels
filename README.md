@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Vehicle Rental System
 
 A modern web application for managing vehicle rentals, built with React, TypeScript, and Supabase.
@@ -191,3 +192,6 @@ Please ensure your code follows the existing style and includes appropriate test
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+=======
+# RentWheels
+>>>>>>> 170fb390ab6608029326c1a717b716771b03847f
