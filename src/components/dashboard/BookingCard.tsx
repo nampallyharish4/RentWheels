@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
@@ -9,18 +9,28 @@ import {
   Car,
   MapPin,
   Trash2,
+  MessageSquare,
 } from 'lucide-react';
 import Card, { CardContent } from '../ui/Card';
 import type { Booking } from '../../types';
 import Button from '../ui/Button';
 import { useBookingStore } from '../../store/bookingStore';
+import ConfirmationModal from '../ui/ConfirmationModal';
 
 interface BookingCardProps {
   booking: Booking;
   isOwnerView?: boolean;
+  onAction?: (bookingId: string, action: 'accept' | 'reject') => Promise<void>;
+  onMessageClick: (bookingId: string) => void;
 }
 
-const BookingCard: React.FC<BookingCardProps> = ({ booking, isOwnerView }) => {
+const BookingCard: React.FC<BookingCardProps> = ({
+  booking,
+  isOwnerView,
+  onMessageClick,
+}) => {
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'confirmed':
@@ -177,21 +187,53 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, isOwnerView }) => {
           ))}
         </div>
 
-        {!isOwnerView &&
-          booking.status !== 'completed' &&
-          booking.status !== 'cancelled' && (
-            <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleCancel}
-                disabled={isLoading}
-                leftIcon={<Trash2 size={12} />}
-              >
-                Cancel
-              </Button>
-            </div>
-          )}
+        {/* Action buttons */}
+        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onMessageClick(booking.id)}
+            leftIcon={<MessageSquare size={12} />}
+          >
+            Message
+          </Button>
+
+          <div className="flex space-x-2">
+            {isOwnerView
+              ? booking.status === 'pending' && (
+                  <>
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => onAction?.(booking.id, 'accept')}
+                      disabled={isLoading}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      variant="dangerOutline"
+                      size="sm"
+                      onClick={() => onAction?.(booking.id, 'reject')}
+                      disabled={isLoading}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )
+              : booking.status !== 'completed' &&
+                booking.status !== 'cancelled' && (
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    leftIcon={<Trash2 size={12} />}
+                  >
+                    Cancel
+                  </Button>
+                )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

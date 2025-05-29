@@ -6,19 +6,73 @@ import type {
   BookingFormData,
   PaymentFormData,
   Vehicle,
-} from '../types';
+  UserProfile,
+} from '../types/index';
 import { differenceInDays, isBefore, isAfter, isEqual } from 'date-fns';
 
-// Interface for combined booking and vehicle details
-export interface BookingWithVehicleDetails extends Booking {
-  vehicle?: Partial<Vehicle>; // Vehicle details will be partial, e.g., make, model, imageUrl
+// Define the expected structure of the raw data from the ownerBookings select query
+// Use snake_case for properties matching the Supabase response
+interface RawOwnerBookingData {
+  id: string;
+  vehicle_id: string;
+  user_id: string;
+  start_date: string; // Assuming date strings from DB
+  end_date: string; // Assuming date strings from DB
+  total_price: number;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  pickup_address: string;
+  dropoff_address: string;
+  payment_id: string | null; // Assuming payment_id exists
+  created_at: string; // Assuming date strings from DB
+  updated_at: string; // Assuming date strings from DB
+  ownerDecision: 'pending' | 'accepted' | 'rejected' | null; // Allow null explicitly from DB
+  // Nested data from joins
+  vehicle: {
+    // Structure matching the select clause for vehicle
+    id: string;
+    make: string;
+    model: string;
+    year: number;
+    daily_rate: number; // Snake_case from DB
+    type: 'car' | 'bike'; // Assuming type exists in Vehicle
+    category: string; // Assuming category exists in Vehicle
+    description: string; // Assuming description exists in Vehicle
+    image_url: string; // Snake_case from DB
+    available: boolean; // Assuming available exists in Vehicle
+    owner_id: string; // Snake_case from DB
+    location: string; // Assuming location exists in Vehicle
+    created_at: string; // Assuming date strings
+    updated_at: string; // Assuming date strings
+  } | null; // Vehicle can be null if not joined or not found
+  user: {
+    // Structure matching the select clause for user profile
+    id: string;
+    full_name: string | null; // Snake_case from DB
+    // Add other profile fields if selected in the query and needed
+    first_name: string | null; // Assuming these exist and are selected
+    lastName: string | null; // Corrected from last_name to match UserProfile type
+    phone: string | null;
+    avatar_url: string | null; // Snake_case from DB
+    email: string;
+    created_at: string; // Assuming date strings
+    updated_at: string; // Assuming date strings
+  } | null; // User can be null if not joined or not found
+}
+
+// Interface for combined booking and vehicle details for owner view
+// Extends Booking and adds customer (user) details, and provides full vehicle details
+// Omit vehicle from base Booking as the join fetches more fields than Pick allows
+export interface BookingWithVehicleDetails extends Omit<Booking, 'vehicle'> {
+  vehicle?: Partial<Vehicle>; // Include full vehicle details fetched by the join
+  customer?: Partial<UserProfile>; // Customer (user) details fetched by the join
+  ownerDecision?: 'pending' | 'accepted' | 'rejected' | null; // Allow null explicitly here too
 }
 
 interface BookingState {
-  bookings: Booking[];
-  ownerBookings: Booking[];
-  currentBooking: Booking | null;
-  selectedBookingDetails: BookingWithVehicleDetails | null; // New state for confirmation page
+  bookings: Booking[]; // User's own bookings (using the base Booking type)
+  ownerBookings: BookingWithVehicleDetails[]; // Bookings for owner's vehicles (using the extended type)
+  currentBooking: BookingWithVehicleDetails | null; // Use extended type for current booking details
+  selectedBookingDetails: BookingWithVehicleDetails | null; // For confirmation page
   isLoading: boolean;
   error: string | null;
 
@@ -58,7 +112,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   bookings: [],
   ownerBookings: [],
   currentBooking: null,
-  selectedBookingDetails: null, // Initialize new state
+  selectedBookingDetails: null,
   isLoading: false,
   error: null,
   bookingFormData: null,
@@ -96,9 +150,37 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         throw error;
       }
 
-      const formattedBookings = data.map(formatBookingResponse);
+      // Format user bookings - these use the base Booking type
+      // The select for user bookings only fetches a Pick of vehicle data
+      // Map snake_case from DB to camelCase for Booking properties
+      const formattedBookings = (data as any[]).map((b) => ({
+        id: b.id,
+        vehicleId: b.vehicle_id,
+        userId: b.user_id,
+        startDate: b.start_date,
+        endDate: b.end_date,
+        totalPrice: b.total_price,
+        status: b.status,
+        pickupAddress: b.pickup_address,
+        dropoffAddress: b.dropoff_address,
+        paymentId: b.payment_id,
+        createdAt: b.created_at,
+        updatedAt: b.updated_at,
+        ownerDecision: b.ownerDecision || null, // Assuming ownerDecision is also in base booking if selected
+        vehicle: b.vehicle
+          ? {
+              // Map vehicle details to Pick<Vehicle>
+              make: b.vehicle.make,
+              model: b.vehicle.model,
+              year: b.vehicle.year,
+              imageUrl: b.vehicle.image_url,
+              // Note: Base Booking type's vehicle is only a Pick, not full Vehicle
+            }
+          : undefined,
+      }));
+
       console.log('[fetchUserBookings] Formatted bookings:', formattedBookings);
-      set({ bookings: formattedBookings as Booking[] });
+      set({ bookings: formattedBookings }); // No cast needed if mapping is correct
     } catch (error) {
       console.error('[fetchUserBookings] Catch error:', error);
       set({ error: (error as Error).message });
@@ -113,13 +195,23 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
       const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select(
+          `
+          *,
+          vehicle:vehicles (*),
+          user:profiles(*)
+          `
+        )
         .eq('id', id)
         .single();
 
       if (error) throw error;
 
-      const formattedBooking = formatBookingResponse(data);
+      // Use the common formatBookingResponse helper
+      // This helper expects RawOwnerBookingData structure (with nested vehicle/user)
+      const formattedBooking = formatBookingResponse(
+        data as RawOwnerBookingData
+      );
       set({ currentBooking: formattedBooking });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -132,62 +224,43 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     try {
       set({ isLoading: true, error: null, selectedBookingDetails: null });
 
-      // Fetch booking details
+      // Fetch booking details with nested vehicle and user for full context
       const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
-        .select('*')
+        .select(
+          `
+          *,
+          vehicle:vehicles (*),
+          user:profiles(*)
+          `
+        )
         .eq('id', bookingId)
         .single();
 
       if (bookingError) throw bookingError;
       if (!bookingData) throw new Error('Booking not found.');
 
-      const formattedBooking = formatBookingResponse(bookingData);
-
-      // Fetch associated vehicle details
-      let vehicleDetails: Partial<Vehicle> | undefined = undefined;
-      if (formattedBooking.vehicleId) {
-        const { data: vehicleData, error: vehicleError } = await supabase
-          .from('vehicles')
-          .select('make, model, imageUrl, year, dailyRate, location') // Select specific fields
-          .eq('id', formattedBooking.vehicleId)
-          .single();
-
-        if (vehicleError) {
-          console.warn(
-            'Could not fetch vehicle details for booking:',
-            vehicleError.message
-          );
-          // Proceed without vehicle details if it fails, or throw error if critical
-        } else if (vehicleData) {
-          vehicleDetails = {
-            make: vehicleData.make,
-            model: vehicleData.model,
-            imageUrl: vehicleData.imageUrl,
-            year: vehicleData.year,
-            dailyRate: vehicleData.daily_rate, // Ensure mapping from snake_case if needed by Vehicle type
-            location: vehicleData.location,
-          };
-        }
-      }
+      // Use the common formatBookingResponse helper to format the fetched data
+      const formattedBookingDetails = formatBookingResponse(
+        bookingData as RawOwnerBookingData
+      );
 
       set({
-        selectedBookingDetails: {
-          ...formattedBooking,
-          vehicle: vehicleDetails,
-        },
+        selectedBookingDetails: formattedBookingDetails,
         isLoading: false,
       });
     } catch (error) {
       console.error('Error fetching booking with vehicle details:', error);
       set({ error: (error as Error).message, isLoading: false });
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   createBooking: async (booking, vehicleId, dailyRate) => {
     try {
-      const profile = useAuthStore.getState().profile;
-      if (!profile)
+      const profileId = useAuthStore.getState().profile?.id;
+      if (!profileId)
         throw new Error('User not authenticated or profile not loaded');
 
       set({ isLoading: true, error: null });
@@ -203,7 +276,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         .neq('status', 'cancelled') // Exclude cancelled bookings
         .or(
           `and(start_date.lte.${endDate.toISOString()},end_date.gte.${startDate.toISOString()})`
-        ); // Check for overlapping date ranges
+        );
 
       if (conflictError) {
         console.error('[createBooking] Conflict check error:', conflictError);
@@ -229,7 +302,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       // Create booking
       const bookingData = {
         vehicle_id: vehicleId,
-        user_id: profile.id,
+        user_id: profileId,
         start_date: booking.startDate,
         end_date: booking.endDate,
         total_price: totalPrice,
@@ -249,14 +322,18 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         throw error;
       }
 
-      console.log('[createBooking] Booking created:', data);
-
-      // Return the ID of the newly created booking
-      return data.id;
+      // Assuming the insert was successful, the created booking object should be in `data`
+      if (data) {
+        // You might want to add the new booking to the state, or refetch all bookings
+        // Refetching is simpler for now to ensure consistency
+        get().fetchUserBookings();
+        return data.id; // Return the ID of the newly created booking
+      }
+      throw new Error('Booking creation failed.'); // Should not happen if data is present
     } catch (error) {
       console.error('[createBooking] Catch error:', error);
       set({ error: (error as Error).message });
-      throw error;
+      throw error; // Re-throw to be caught by the component
     } finally {
       set({ isLoading: false });
     }
@@ -265,37 +342,25 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   updateBooking: async (id, booking) => {
     try {
       set({ isLoading: true, error: null });
-
-      // Convert from camelCase to snake_case for Supabase
-      const updateData: Record<string, unknown> = {};
-
-      if (booking.startDate !== undefined)
-        updateData.start_date = booking.startDate;
-      if (booking.endDate !== undefined) updateData.end_date = booking.endDate;
-      if (booking.totalPrice !== undefined)
-        updateData.total_price = booking.totalPrice;
-      if (booking.status !== undefined) updateData.status = booking.status;
-      if (booking.pickupAddress !== undefined)
-        updateData.pickup_address = booking.pickupAddress;
-      if (booking.dropoffAddress !== undefined)
-        updateData.dropoff_address = booking.dropoffAddress;
-      if (booking.paymentId !== undefined)
-        updateData.payment_id = booking.paymentId;
-
-      const { error } = await supabase
+      const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update(updateData)
-        .eq('id', id);
+        .update(booking)
+        .eq('id', id)
+        .select();
 
-      if (error) throw error;
-
-      // Refresh the bookings
-      await get().fetchUserBookings();
-      if (get().currentBooking?.id === id) {
-        await get().fetchBookingById(id);
+      if (error) {
+        console.error('[updateBooking] Supabase update error:', error);
+        throw error;
       }
+
+      // Optionally update the state with the modified booking
+      // For simplicity, we might refetch bookings after important updates
+      get().fetchUserBookings();
+      get().fetchOwnerBookings();
     } catch (error) {
+      console.error('[updateBooking] Catch error:', error);
       set({ error: (error as Error).message });
+      throw error; // Re-throw to be caught by the component
     } finally {
       set({ isLoading: false });
     }
@@ -305,78 +370,93 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      const { error } = await supabase
+      const { error } = await supabase // Removed unused 'data'
         .from('bookings')
         .update({ status: 'cancelled' })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[cancelBooking] Supabase update error:', error);
+        throw error;
+      }
 
-      // Refresh the bookings
-      await get().fetchUserBookings();
+      // Refetch bookings to update the UI
+      get().fetchUserBookings();
     } catch (error) {
+      console.error('[cancelBooking] Catch error:', error);
       set({ error: (error as Error).message });
+      // Optionally re-throw the error if the component needs to handle it
+      // throw error;
     } finally {
       set({ isLoading: false });
     }
   },
 
-  setBookingFormData: (data) => {
-    set({ bookingFormData: data });
-  },
-
-  setPaymentFormData: (data) => {
-    set({ paymentFormData: data });
-  },
-
-  setVehicleId: (id) => {
-    set({ vehicleId: id });
-  },
-
-  clearBookingFlow: () => {
-    set({
-      bookingFormData: null,
-      paymentFormData: null,
-      vehicleId: null,
-      currentBooking: null,
-    });
-  },
+  setBookingFormData: (data) => set({ bookingFormData: data }),
+  setPaymentFormData: (data) => set({ paymentFormData: data }),
+  setVehicleId: (id) => set({ vehicleId: id }),
+  clearBookingFlow: () =>
+    set({ bookingFormData: null, paymentFormData: null, vehicleId: null }),
 
   processPayment: async () => {
     try {
-      const { currentBooking, paymentFormData } = get();
-      if (!currentBooking) throw new Error('No active booking');
-      if (!paymentFormData) throw new Error('Payment data not provided');
+      const { bookingFormData, vehicleId, paymentFormData } = get();
+      const profile = useAuthStore.getState().profile;
+
+      if (!bookingFormData || !vehicleId || !paymentFormData || !profile)
+        throw new Error(
+          'Booking or payment data missing. Please restart the booking process.'
+        );
 
       set({ isLoading: true, error: null });
 
-      // Create payment record
-      const paymentData = {
-        booking_id: currentBooking.id,
-        amount: currentBooking.totalPrice,
-        status: 'completed', // In a real app, this would be 'pending' until confirmed
-        payment_method: paymentFormData.paymentMethod,
-        transaction_id: `tx_${Math.random().toString(36).substr(2, 9)}`, // Mock transaction ID
-      };
-
-      const { data, error } = await supabase
-        .from('payments')
-        .insert(paymentData)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Update booking with payment ID and set status to confirmed
-      await get().updateBooking(currentBooking.id, {
-        paymentId: data.id,
-        status: 'confirmed',
+      // In a real application, this is where you would integrate with a payment gateway (e.g., Stripe, PayPal)
+      // This is a placeholder that simulates a successful payment after a delay.
+      console.log('Processing payment...', {
+        paymentFormData,
+        bookingFormData,
       });
 
-      return data.id;
+      // Simulate payment processing delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // After successful payment, create the booking
+      // You might move the createBooking logic here, or call it after confirming payment
+      // For this example, we'll assume payment success means we can proceed to create booking
+
+      // Fetch vehicle daily rate to calculate total price accurately
+      const { data: vehicleData, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('daily_rate')
+        .eq('id', vehicleId)
+        .single();
+
+      if (vehicleError) {
+        console.error(
+          '[processPayment] Error fetching vehicle daily rate:',
+          vehicleError
+        );
+        throw vehicleError;
+      }
+
+      if (!vehicleData) {
+        throw new Error('Vehicle not found for payment processing.');
+      }
+
+      const bookingId = await get().createBooking(
+        bookingFormData,
+        vehicleId,
+        vehicleData.daily_rate
+      );
+
+      // Clear booking flow data after successful booking
+      get().clearBookingFlow();
+
+      return bookingId; // Return the created booking ID
     } catch (error) {
+      console.error('[processPayment] Catch error:', error);
       set({ error: (error as Error).message });
-      throw error;
+      throw error; // Re-throw to be caught by the component
     } finally {
       set({ isLoading: false });
     }
@@ -385,61 +465,56 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   fetchOwnerBookings: async () => {
     try {
       const userId = useAuthStore.getState().profile?.id;
-      if (!userId) {
-        set({ error: 'User not authenticated or profile not loaded' });
-        return;
-      }
+      if (!userId) throw new Error('User not authenticated');
 
       set({ isLoading: true, error: null });
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(
-          `
+      // Fetch vehicles owned by the user
+      const { data: userVehicles, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id')
+        .eq('owner_id', userId);
+
+      if (vehiclesError) throw vehiclesError;
+
+      const userVehicleIds = userVehicles.map((vehicle) => vehicle.id);
+
+      console.log('[fetchOwnerBookings] User ID:', userId);
+      console.log('[fetchOwnerBookings] Owned Vehicle IDs:', userVehicleIds);
+
+      if (userVehicleIds.length === 0) {
+        set({ ownerBookings: [] }); // No vehicles, no owner bookings
+        return;
+      }
+
+      // Fetch bookings for these vehicles where the user is NOT the booker
+      const { data: ownerBookingsData, error: ownerBookingsError } =
+        await supabase
+          .from('bookings')
+          .select(
+            `
           *,
-          vehicle:vehicles (
-            owner_id,
-            make,
-            model,
-            year,
-            image_url
-          )
+          vehicle:vehicles (*),
+          user:profiles(*)
         `
-        )
-        .eq('vehicle.owner_id', userId)
-        .order('created_at', { ascending: false });
-
-      console.log('[fetchOwnerBookings] Query result data:', data);
-      if (data) {
-        data.forEach((booking: any) => {
-          console.log(
-            '[fetchOwnerBookings] Vehicle object for booking',
-            booking.id,
-            ':',
-            booking.vehicle
-          );
-        });
-      }
-
-      console.error('[fetchOwnerBookings] Query error:', error);
-
-      if (error) {
-        throw error;
-      }
-
-      // Filter out bookings where the vehicle is null (shouldn't happen if FK is strict)
-      // and format the response
-      const ownerBookings = data
-        ?.filter((booking) => booking.vehicle !== null)
-        .map(formatBookingResponse);
+          )
+          .in('vehicle_id', userVehicleIds)
+          .neq('user_id', userId) // Exclude bookings made by the owner for their own vehicle
+          .order('created_at', { ascending: false });
 
       console.log(
-        '[fetchOwnerBookings] Formatted owner bookings:',
-        ownerBookings
+        '[fetchOwnerBookings] Raw data from Supabase:',
+        ownerBookingsData
       );
-      set({ ownerBookings: ownerBookings as Booking[] });
+
+      if (ownerBookingsError) throw ownerBookingsError;
+
+      const formattedOwnerBookings = (
+        ownerBookingsData as RawOwnerBookingData[]
+      ).map(formatBookingResponse);
+      set({ ownerBookings: formattedOwnerBookings });
     } catch (error) {
-      console.error('[fetchOwnerBookings] Catch error:', error);
+      console.error('[fetchOwnerBookings] Error:', error);
       set({ error: (error as Error).message });
     } finally {
       set({ isLoading: false });
@@ -449,65 +524,110 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   acceptBooking: async (bookingId) => {
     try {
       set({ isLoading: true, error: null });
-      const { error } = await supabase
+      const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', bookingId);
+        .update({ status: 'confirmed', ownerDecision: 'accepted' })
+        .eq('id', bookingId)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Refresh bookings to reflect the change
-      get().fetchOwnerBookings(); // Or fetchUserBookings if accepting your own
+      // Refetch owner bookings to update the list
+      get().fetchOwnerBookings();
+      // Optionally update the specific booking in the state if needed
     } catch (error) {
-      console.error('[acceptBooking] Catch error:', error);
-      set({ error: (error as Error).message, isLoading: false });
+      console.error('[acceptBooking] Error:', error);
+      set({ error: (error as Error).message });
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   rejectBooking: async (bookingId) => {
     try {
       set({ isLoading: true, error: null });
-      const { error } = await supabase
+      const { error } = await supabase // Removed unused 'data'
         .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId);
+        .update({ status: 'cancelled', ownerDecision: 'rejected' })
+        .eq('id', bookingId)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Refresh bookings to reflect the change
-      get().fetchOwnerBookings(); // Or fetchUserBookings if rejecting your own
+      // Refetch owner bookings to update the list
+      get().fetchOwnerBookings();
+      // Optionally update the specific booking in the state if needed
     } catch (error) {
-      console.error('[rejectBooking] Catch error:', error);
-      set({ error: (error as Error).message, isLoading: false });
+      console.error('[rejectBooking] Error:', error);
+      set({ error: (error as Error).message });
+    } finally {
+      set({ isLoading: false });
     }
   },
 }));
 
-// Helper function to convert from snake_case to camelCase
-function formatBookingResponse(booking: any): Booking {
-  console.log('[formatBookingResponse] Formatting booking:', booking);
-  const formatted = {
+// Helper function to format booking response
+function formatBookingResponse(
+  booking: RawOwnerBookingData
+): BookingWithVehicleDetails {
+  // Map Supabase snake_case to camelCase
+  const baseBooking: Booking = {
+    // Use Booking type for the base mapping
     id: booking.id,
     vehicleId: booking.vehicle_id,
     userId: booking.user_id,
-    startDate: booking.start_date,
-    endDate: booking.end_date,
+    startDate: booking.start_date, // Assuming these are strings/ISO dates from DB
+    endDate: booking.end_date, // Assuming these are strings/ISO dates from DB
     totalPrice: booking.total_price,
     status: booking.status,
     pickupAddress: booking.pickup_address,
     dropoffAddress: booking.dropoff_address,
-    paymentId: booking.payment_id,
-    createdAt: booking.created_at,
-    updatedAt: booking.updated_at,
+    paymentId: booking.payment_id, // Assuming payment_id exists and is snake_case
+    createdAt: booking.created_at, // Assuming these are strings/ISO dates from DB
+    updatedAt: booking.updated_at, // Assuming these are strings/ISO dates from DB
+    // The base Booking type also has an optional vehicle property (Pick type)
+    // which will be overridden by the detailed vehicle below.
+    ownerDecision: booking.ownerDecision, // Directly use ownerDecision, allowing null
+  };
+
+  // Build the detailed booking including vehicle and customer
+  const detailedBooking: BookingWithVehicleDetails = {
+    ...baseBooking,
+    // Map nested vehicle details from snake_case to camelCase using the Vehicle type
     vehicle: booking.vehicle
       ? {
+          id: booking.vehicle.id,
           make: booking.vehicle.make,
           model: booking.vehicle.model,
           year: booking.vehicle.year,
-          imageUrl: booking.vehicle.image_url,
+          dailyRate: booking.vehicle.daily_rate, // Correctly map snake_case to camelCase
+          type: booking.vehicle.type,
+          category: booking.vehicle.category,
+          description: booking.vehicle.description,
+          imageUrl: booking.vehicle.image_url, // Correctly map snake_case to camelCase
+          available: booking.vehicle.available,
+          ownerId: booking.vehicle.owner_id, // Correctly map snake_case to camelCase
+          location: booking.vehicle.location,
+          createdAt: booking.vehicle.created_at, // Assuming strings
+          updatedAt: booking.vehicle.updated_at, // Assuming strings
+        }
+      : undefined,
+    // Map nested user (customer) details from snake_case to camelCase using the UserProfile type
+    customer: booking.user
+      ? {
+          id: booking.user.id,
+          firstName: booking.user.first_name, // Correctly map snake_case to camelCase
+          lastName: booking.user.last_name, // Correctly map snake_case to camelCase
+          phone: booking.user.phone,
+          avatarUrl: booking.user.avatar_url, // Correctly map snake_case to camelCase
+          email: booking.user.email,
+          createdAt: booking.user.created_at,
+          updatedAt: booking.user.updated_at,
         }
       : undefined,
   };
-  console.log('[formatBookingResponse] Result:', formatted);
-  return formatted;
+
+  return detailedBooking;
 }

@@ -3,7 +3,14 @@ import { Link } from 'react-router-dom';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import Button from '../components/ui/Button';
-import { Car, Plus, AlertTriangle, Edit, Trash2 } from 'lucide-react';
+import {
+  Car,
+  Plus,
+  AlertTriangle,
+  Edit,
+  Trash2,
+  ArrowLeft,
+} from 'lucide-react';
 import type { Vehicle } from '../types';
 import Card, { CardContent } from '../components/ui/Card'; // For consistency if needed
 import ConfirmationModal from '../components/ui/ConfirmationModal'; // Import the modal
@@ -60,6 +67,10 @@ const VehicleListPage: React.FC = () => {
       }
     }
   };
+
+  // Filter vehicles into available and unavailable lists
+  const availableVehicles = userListedVehicles.filter(vehicle => vehicle.available);
+  const unavailableVehicles = userListedVehicles.filter(vehicle => !vehicle.available);
 
   // Custom card renderer for this page, potentially different from dashboard's
   const renderListedVehicleCard = (vehicle: Vehicle) => (
@@ -160,6 +171,16 @@ const VehicleListPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
+      <div className="mb-6">
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center text-secondary-600 hover:text-secondary-900 transition-colors duration-200"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Dashboard
+        </Link>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
         <h1 className="text-3xl font-bold text-secondary-900">
           My Listed Vehicles ({userListedVehicles.length})
@@ -185,11 +206,39 @@ const VehicleListPage: React.FC = () => {
         </div>
       )}
 
-      {userListedVehicles.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {userListedVehicles.map(renderListedVehicleCard)}
+      {/* Display Available Vehicles */}
+      {availableVehicles.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-secondary-900 mb-4">Available Vehicles ({availableVehicles.length})</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {availableVehicles.map(renderListedVehicleCard)}
+          </div>
         </div>
       )}
+
+      {/* Display message if no available vehicles */}
+      {userListedVehicles.length > 0 && availableVehicles.length === 0 && (
+         <div className="mb-8 text-secondary-600">
+            No vehicles currently available.
+         </div>
+      )}
+
+      {/* Display Unavailable Vehicles */}
+      {unavailableVehicles.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-secondary-900 mb-4">Unavailable Vehicles ({unavailableVehicles.length})</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {unavailableVehicles.map(renderListedVehicleCard)}
+          </div>
+        </div>
+      )}
+
+       {/* Display message if no unavailable vehicles */}
+       {userListedVehicles.length > 0 && unavailableVehicles.length === 0 && (
+          <div className="mb-8 text-secondary-600">
+             No vehicles currently unavailable.
+          </div>
+       )}
 
       <ConfirmationModal
         isOpen={isModalOpen}

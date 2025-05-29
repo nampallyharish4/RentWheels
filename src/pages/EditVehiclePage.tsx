@@ -7,6 +7,37 @@ import { useAuthStore } from '../store/authStore';
 import type { Vehicle } from '../types';
 import SuccessModal from '../components/ui/SuccessModal';
 
+// Simple ToggleSwitch component
+const ToggleSwitch: React.FC<{
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}> = ({ checked, onChange, label }) => {
+  return (
+    <label className="flex items-center cursor-pointer">
+      <div className="relative">
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <div
+          className={`block w-14 h-8 rounded-full transition-colors duration-300 ease-in-out ${
+            checked ? 'bg-green-500' : 'bg-red-500'
+          }`}
+        ></div>
+        <div
+          className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 ease-in-out ${
+            checked ? 'transform translate-x-6' : ''
+          }`}
+        ></div>
+      </div>
+      <div className="ml-3 text-gray-700 font-medium">{label}</div>
+    </label>
+  );
+};
+
 // Form data will be a subset of Vehicle, focusing on editable fields.
 // Ensure price is handled as string for form input, and converted.
 interface EditVehicleFormData {
@@ -92,12 +123,19 @@ const EditVehiclePage: React.FC = () => {
     >
   ) => {
     if (!formData) return;
-    const { name, value, type } = e.target;
-    const val =
-      type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: val,
+      [name]: value,
+    });
+  };
+
+  // Dedicated handler for the available toggle switch
+  const handleAvailableToggle = (checked: boolean) => {
+    if (!formData) return;
+    setFormData({
+      ...formData,
+      available: checked,
     });
   };
 
@@ -143,7 +181,7 @@ const EditVehiclePage: React.FC = () => {
         description: formData.description,
         imageUrl: formData.imageUrl,
         location: formData.location,
-        available: formData.available,
+        available: formData.available, // Use boolean directly
         type: formData.type, // Include type in update data
       };
 
@@ -161,6 +199,11 @@ const EditVehiclePage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setIsSuccessModalOpen(false);
+    navigate(`/vehicles/list`);
   };
 
   if (isLoading && !formData && !pageMessage) {
@@ -195,41 +238,26 @@ const EditVehiclePage: React.FC = () => {
     );
   }
 
-  const handleSuccessModalClose = () => {
-    setIsSuccessModalOpen(false);
-    navigate(`/vehicles/list`);
-  };
-
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-8">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
       <Card>
         <CardHeader>
-          <h1 className="text-2xl font-bold text-secondary-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             Edit Vehicle Details
           </h1>
-          <p className="text-secondary-600">
+          <p className="text-gray-600">
             Update the information for your vehicle.
           </p>
         </CardHeader>
         <CardContent>
-          {submitError && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-300 rounded-md">
-              {submitError}
-            </div>
-          )}
-          {storeError && !submitError && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-300 rounded-md">
-              Store error: {storeError}
-            </div>
-          )}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="make"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Make <span className="text-red-500">*</span>
+                  Make *
                 </label>
                 <input
                   type="text"
@@ -237,16 +265,16 @@ const EditVehiclePage: React.FC = () => {
                   id="make"
                   value={formData.make}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full input-class"
                 />
               </div>
               <div>
                 <label
                   htmlFor="model"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Model <span className="text-red-500">*</span>
+                  Model *
                 </label>
                 <input
                   type="text"
@@ -254,16 +282,16 @@ const EditVehiclePage: React.FC = () => {
                   id="model"
                   value={formData.model}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full input-class"
                 />
               </div>
               <div>
                 <label
                   htmlFor="year"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Year <span className="text-red-500">*</span>
+                  Year *
                 </label>
                 <input
                   type="number"
@@ -271,29 +299,26 @@ const EditVehiclePage: React.FC = () => {
                   id="year"
                   value={formData.year}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  min="1900"
-                  max={new Date().getFullYear() + 1}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 />
               </div>
               <div>
                 <label
                   htmlFor="price"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Price per day (₹) <span className="text-red-500">*</span>
+                  Price per day (₹) *
                 </label>
                 <input
                   type="number"
                   name="price"
                   id="price"
-                  step="0.01"
                   value={formData.price}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  step="0.01"
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="e.g., 50"
                 />
               </div>
               <div>
@@ -301,17 +326,16 @@ const EditVehiclePage: React.FC = () => {
                   htmlFor="type"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Type <span className="text-red-500">*</span>
+                  Type *
                 </label>
                 <select
-                  name="type"
                   id="type"
+                  name="type"
                   value={formData.type}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 >
-                  <option value="">Select Type</option>
                   <option value="car">Car</option>
                   <option value="bike">Bike</option>
                 </select>
@@ -319,34 +343,31 @@ const EditVehiclePage: React.FC = () => {
               <div>
                 <label
                   htmlFor="category"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Category <span className="text-red-500">*</span>
+                  Category *
                 </label>
                 <select
-                  name="category"
                   id="category"
+                  name="category"
                   value={formData.category}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full input-class"
                 >
-                  <option value="" disabled>
-                    Select a category
-                  </option>
-                  {vehicleCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  {vehicleCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
                     </option>
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label
                   htmlFor="location"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Location (City, State) <span className="text-red-500">*</span>
+                  Location (City, State) *
                 </label>
                 <input
                   type="text"
@@ -354,17 +375,16 @@ const EditVehiclePage: React.FC = () => {
                   id="location"
                   value={formData.location}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="e.g., Los Angeles, CA"
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label
                   htmlFor="imageUrl"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
-                  Image URL <span className="text-red-500">*</span>
+                  Image URL *
                 </label>
                 <input
                   type="url"
@@ -372,92 +392,54 @@ const EditVehiclePage: React.FC = () => {
                   id="imageUrl"
                   value={formData.imageUrl}
                   onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                   required
-                  className="mt-1 block w-full input-class"
-                  placeholder="https://example.com/image.jpg"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              <div>
+              <div className="md:col-span-2">
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-secondary-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Detailed Description
                 </label>
                 <textarea
                   name="description"
                   id="description"
-                  rows={5}
+                  rows={3}
                   value={formData.description}
                   onChange={handleChange}
-                  className="mt-1 block w-full input-class"
-                />
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                ></textarea>
               </div>
-              <div className="flex items-center">
-                <input
-                  id="available"
-                  name="available"
-                  type="checkbox"
+              <div className="md:col-span-2 flex items-center">
+                <ToggleSwitch
+                  label="Available for rent"
                   checked={formData.available}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 border-secondary-300 rounded focus:ring-primary-500"
+                  onChange={handleAvailableToggle}
                 />
-                <label
-                  htmlFor="available"
-                  className="ml-2 block text-sm text-secondary-900"
-                >
-                  Available for rent
-                </label>
               </div>
             </div>
 
-            <div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting || isLoading}
-              >
-                {isSubmitting ? 'Updating Vehicle...' : 'Save Changes'}
-              </Button>
-            </div>
-            <div className="mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate(-1)}
-              >
-                Cancel
+            {submitError && (
+              <div className="text-red-600 text-sm mt-2">{submitError}</div>
+            )}
+
+            <div className="flex justify-end">
+              <Button type="submit" isLoading={isSubmitting}>
+                Save Changes
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleSuccessModalClose}
         title={successModalTitle}
         message={successModalMessage}
       />
-      <style jsx global>{`
-        .input-class {
-          padding: 0.5rem 0.75rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        }
-        .input-class:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #6366f1;
-          border-color: #6366f1;
-        }
-        .input-class::placeholder {
-          color: #9ca3af;
-        }
-      `}</style>
     </div>
   );
 };
