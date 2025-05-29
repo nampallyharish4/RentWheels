@@ -1,0 +1,1 @@
+SELECT b.*, v.make, v.model FROM bookings b JOIN vehicles v ON b.vehicle_id = v.id WHERE v.owner_id = '7855c15c-8a48-4090-892a-9013c49367ff'; 

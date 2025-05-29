@@ -23,12 +23,17 @@ import type { Vehicle, Booking } from '../../types';
 import ConfirmationModal from '../ui/ConfirmationModal';
 import DeleteAccountModal from '../auth/DeleteAccountModal';
 import EditProfileModal from '../auth/EditProfileModal';
+import BookingCard from './BookingCard';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuthStore();
   const {
-    bookings,
+    bookings: userBookings,
+    ownerBookings,
     fetchUserBookings,
+    fetchOwnerBookings,
+    acceptBooking,
+    rejectBooking,
     isLoading: bookingsLoading,
     updateBooking,
   } = useBookingStore();
@@ -39,8 +44,9 @@ const Dashboard: React.FC = () => {
     error: vehiclesStoreError,
     deleteVehicle,
   } = useVehicleStore();
-
-  const [activeTab, setActiveTab] = useState<'orders' | 'vehicles'>('orders');
+  const [activeTab, setActiveTab] = useState<
+    'bookings' | 'orders' | 'vehicles'
+  >('bookings');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [vehiclePendingDeletion, setVehiclePendingDeletion] =
     useState<Vehicle | null>(null);
@@ -49,12 +55,15 @@ const Dashboard: React.FC = () => {
     useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
+  console.log('[Dashboard] User listed vehicles:', userListedVehicles);
+
   useEffect(() => {
     if (profile) {
       fetchUserBookings();
+      fetchOwnerBookings();
       fetchUserListedVehicles(profile.id);
     }
-  }, [profile, fetchUserBookings, fetchUserListedVehicles]);
+  }, [profile, fetchUserBookings, fetchOwnerBookings, fetchUserListedVehicles]);
 
   const handleBookingAction = async (
     bookingId: string,
@@ -154,6 +163,14 @@ const Dashboard: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
+  const activeBookings = userBookings.filter(
+    (booking) => booking.status === 'pending' || booking.status === 'confirmed'
+  );
+  const completedTrips = userBookings.filter(
+    (booking) => booking.status === 'completed'
+  );
+  const listedVehicles = userListedVehicles;
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -183,15 +200,17 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-orange-100 p-3 rounded-full mr-4">
-                <CalendarCheck className="h-6 w-6 text-orange-600" />
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <Clock className="h-6 w-6 text-orange-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Active Orders</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'confirmed').length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Active Bookings
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {activeBookings.length}
                 </p>
               </div>
             </div>
@@ -199,15 +218,17 @@ const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-gray-100 p-3 rounded-full mr-4">
-                <Clock className="h-6 w-6 text-gray-600" />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Completed Orders</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter((b) => b.status === 'completed').length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Completed Trips
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {completedTrips.length}
                 </p>
               </div>
             </div>
@@ -215,15 +236,17 @@ const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardContent className="py-6">
+          <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="bg-green-100 p-3 rounded-full mr-4">
-                <Car className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Car className="h-6 w-6 text-blue-600" />
               </div>
-              <div>
-                <p className="text-gray-600 text-sm">Listed Vehicles</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {userListedVehicles.length}
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Listed Vehicles
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {listedVehicles.length}
                 </p>
               </div>
             </div>
@@ -245,13 +268,13 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'vehicles'
+              activeTab === 'orders'
                 ? 'border-orange-600 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => setActiveTab('vehicles')}
+            onClick={() => setActiveTab('orders')}
           >
-            Vehicle Requests
+            My Orders
           </button>
         </div>
       </div>
@@ -269,55 +292,18 @@ const Dashboard: React.FC = () => {
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              ) : bookings.length === 0 ? (
+              ) : userBookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
                   No orders found
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {bookings.map((booking) => (
-                    <div
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userBookings.map((booking) => (
+                    <BookingCard
                       key={booking.id}
-                      className="bg-white rounded-lg border border-gray-200 p-4"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-gray-900">
-                              {booking.vehicle?.make} {booking.vehicle?.model}
-                            </h3>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(
-                                booking.status
-                              )}`}
-                            >
-                              {booking.status.charAt(0).toUpperCase() +
-                                booking.status.slice(1)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            {format(
-                              new Date(booking.startDate),
-                              'MMM dd, yyyy'
-                            )}{' '}
-                            -{' '}
-                            {format(new Date(booking.endDate), 'MMM dd, yyyy')}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Total: ₹{booking.totalPrice.toFixed(2)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            to={`/booking-details/${booking.id}`}
-                            className="text-sm text-primary-600 hover:text-primary-700"
-                          >
-                            View Details
-                          </Link>
-                        </div>
-                      </div>
-                      {renderBookingTimeline(booking)}
-                    </div>
+                      booking={booking}
+                      isOwnerView={false}
+                    />
                   ))}
                 </div>
               )}
@@ -326,74 +312,32 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'vehicles' && (
+      {activeTab === 'orders' && (
         <div>
           <Card>
             <CardHeader>
               <h2 className="text-lg font-semibold text-secondary-900">
-                Vehicle Booking Requests
+                Orders for My Vehicles
               </h2>
             </CardHeader>
             <CardContent>
-              {vehiclesLoading ? (
+              {bookingsLoading ? (
                 <div className="text-center py-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
-              ) : bookings.filter((b) => b.status === 'pending').length === 0 ? (
+              ) : ownerBookings.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">
-                  No pending requests
+                  No orders for your vehicles found.
                 </p>
               ) : (
-                <div className="space-y-4">
-                  {bookings
-                    .filter((b) => b.status === 'pending')
-                    .map((booking) => (
-                      <div
-                        key={booking.id}
-                        className="bg-white rounded-lg border border-gray-200 p-4"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 mb-2">
-                              {booking.vehicle?.make} {booking.vehicle?.model}
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              {format(
-                                new Date(booking.startDate),
-                                'MMM dd, yyyy'
-                              )}{' '}
-                              -{' '}
-                              {format(new Date(booking.endDate), 'MMM dd, yyyy')}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              Amount: ₹{booking.totalPrice.toFixed(2)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingAction(booking.id, 'accept')
-                              }
-                              leftIcon={<CheckCircle size={16} />}
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              variant="dangerOutline"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingAction(booking.id, 'reject')
-                              }
-                              leftIcon={<XCircle size={16} />}
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {ownerBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      isOwnerView={true}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>

@@ -16,6 +16,7 @@ export interface BookingWithVehicleDetails extends Booking {
 
 interface BookingState {
   bookings: Booking[];
+  ownerBookings: Booking[];
   currentBooking: Booking | null;
   selectedBookingDetails: BookingWithVehicleDetails | null; // New state for confirmation page
   isLoading: boolean;
@@ -46,10 +47,16 @@ interface BookingState {
 
   // Payment actions
   processPayment: () => Promise<string>;
+
+  // Owner actions
+  fetchOwnerBookings: () => Promise<void>;
+  acceptBooking: (bookingId: string) => Promise<void>;
+  rejectBooking: (bookingId: string) => Promise<void>;
 }
 
 export const useBookingStore = create<BookingState>((set, get) => ({
   bookings: [],
+  ownerBookings: [],
   currentBooking: null,
   selectedBookingDetails: null, // Initialize new state
   isLoading: false,
@@ -372,6 +379,106 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       throw error;
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  fetchOwnerBookings: async () => {
+    try {
+      const userId = useAuthStore.getState().profile?.id;
+      if (!userId) {
+        set({ error: 'User not authenticated or profile not loaded' });
+        return;
+      }
+
+      set({ isLoading: true, error: null });
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(
+          `
+          *,
+          vehicle:vehicles (
+            owner_id,
+            make,
+            model,
+            year,
+            image_url
+          )
+        `
+        )
+        .eq('vehicle.owner_id', userId)
+        .order('created_at', { ascending: false });
+
+      console.log('[fetchOwnerBookings] Query result data:', data);
+      if (data) {
+        data.forEach((booking: any) => {
+          console.log(
+            '[fetchOwnerBookings] Vehicle object for booking',
+            booking.id,
+            ':',
+            booking.vehicle
+          );
+        });
+      }
+
+      console.error('[fetchOwnerBookings] Query error:', error);
+
+      if (error) {
+        throw error;
+      }
+
+      // Filter out bookings where the vehicle is null (shouldn't happen if FK is strict)
+      // and format the response
+      const ownerBookings = data
+        ?.filter((booking) => booking.vehicle !== null)
+        .map(formatBookingResponse);
+
+      console.log(
+        '[fetchOwnerBookings] Formatted owner bookings:',
+        ownerBookings
+      );
+      set({ ownerBookings: ownerBookings as Booking[] });
+    } catch (error) {
+      console.error('[fetchOwnerBookings] Catch error:', error);
+      set({ error: (error as Error).message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  acceptBooking: async (bookingId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Refresh bookings to reflect the change
+      get().fetchOwnerBookings(); // Or fetchUserBookings if accepting your own
+    } catch (error) {
+      console.error('[acceptBooking] Catch error:', error);
+      set({ error: (error as Error).message, isLoading: false });
+    }
+  },
+
+  rejectBooking: async (bookingId) => {
+    try {
+      set({ isLoading: true, error: null });
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Refresh bookings to reflect the change
+      get().fetchOwnerBookings(); // Or fetchUserBookings if rejecting your own
+    } catch (error) {
+      console.error('[rejectBooking] Catch error:', error);
+      set({ error: (error as Error).message, isLoading: false });
     }
   },
 }));
