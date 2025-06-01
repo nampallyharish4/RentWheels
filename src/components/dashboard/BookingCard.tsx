@@ -149,7 +149,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
             'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=800'
           }
           alt={`${booking.vehicle?.make} ${booking.vehicle?.model}`}
-          className="w-full h-28 object-cover"
+          className="w-full h-56 object-cover"
         />
         <div className="absolute top-1 right-1">
           <span
@@ -209,7 +209,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
               <div className="text-xs">
                 <p
                   className={`font-medium ${
-                    step.completed ? 'text-gray-900' : 'text-gray-500'
+                    step.title === 'Booking Cancelled'
+                      ? 'text-red-600'
+                      : step.completed
+                      ? 'text-gray-900'
+                      : 'text-gray-500'
                   }`}
                 >
                   {step.title}

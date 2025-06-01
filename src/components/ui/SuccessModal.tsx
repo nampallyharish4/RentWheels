@@ -7,6 +7,7 @@ interface SuccessModalProps {
   onClose: () => void;
   title: string;
   message: string;
+  error?: boolean;
 }
 
 const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -14,6 +15,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   onClose,
   title,
   message,
+  error = false,
 }) => {
   if (!isOpen) return null;
 
@@ -34,11 +36,23 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
         <div className="relative inline-block transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 sm:align-middle">
           <div>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+            <div
+              className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${
+                error ? 'bg-red-100' : 'bg-green-100'
+              }`}
+            >
+              {error ? (
+                <X className="h-6 w-6 text-red-600" />
+              ) : (
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              )}
             </div>
             <div className="mt-3 text-center sm:mt-5">
-              <h3 className="text-lg font-bold leading-6 text-secondary-900">
+              <h3
+                className={`text-lg font-bold leading-6 ${
+                  error ? 'text-red-700' : 'text-secondary-900'
+                }`}
+              >
                 {title}
               </h3>
               <div className="mt-2">

@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Car, Plus, User, Clock, CheckCircle, Users } from 'lucide-react';
+import {
+  Car,
+  Plus,
+  User,
+  Clock,
+  CheckCircle,
+  Users,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { useAuthStore } from '../../store/authStore';
@@ -28,6 +37,7 @@ const Dashboard: React.FC = () => {
     useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [chatBookingId, setChatBookingId] = useState<string | null>(null);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   console.log('[Dashboard] User listed vehicles:', userListedVehicles);
 
@@ -236,27 +246,69 @@ const Dashboard: React.FC = () => {
       </div>
 
       {activeTab === 'bookings' && (
-        <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <h2 className="text-xl font-bold text-gray-900 col-span-full">
-            My Bookings
-          </h2>
-          {bookingsLoading ? (
-            <p className="col-span-full">Loading bookings...</p>
-          ) : userBookings.length > 0 ? (
-            userBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                onAction={handleBookingAction}
-                onMessageClick={openChatModal}
-              />
-            ))
-          ) : (
-            <p className="text-gray-600 col-span-full">
-              You have no upcoming bookings.
-            </p>
-          )}
-        </div>
+        <>
+          <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-xl font-bold text-gray-900 col-span-full">
+              My Bookings
+            </h2>
+            {bookingsLoading ? (
+              <p className="col-span-full">Loading bookings...</p>
+            ) : activeBookings.length > 0 ? (
+              activeBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onAction={handleBookingAction}
+                  onMessageClick={openChatModal}
+                />
+              ))
+            ) : (
+              <p className="text-gray-600 col-span-full">
+                You have no upcoming bookings.
+              </p>
+            )}
+          </div>
+
+          {/* Cancelled Bookings Section as Dropdown */}
+          <div className="mt-10">
+            <button
+              className="flex items-center w-full text-left focus:outline-none"
+              onClick={() => setShowCancelled((prev) => !prev)}
+            >
+              <h2 className="text-xl font-bold text-red-700 flex-1">
+                Cancelled Bookings
+              </h2>
+              {showCancelled ? (
+                <ChevronUp className="text-red-700" />
+              ) : (
+                <ChevronDown className="text-red-700" />
+              )}
+            </button>
+            {showCancelled && (
+              <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                {bookingsLoading ? (
+                  <p className="col-span-full">Loading cancelled bookings...</p>
+                ) : userBookings.filter((b) => b.status === 'cancelled')
+                    .length > 0 ? (
+                  userBookings
+                    .filter((b) => b.status === 'cancelled')
+                    .map((booking) => (
+                      <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        onAction={handleBookingAction}
+                        onMessageClick={openChatModal}
+                      />
+                    ))
+                ) : (
+                  <p className="text-gray-600 col-span-full">
+                    You have no cancelled bookings.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === 'orders' && (

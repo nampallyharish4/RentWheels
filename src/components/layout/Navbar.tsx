@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { Car, Menu, X, LogIn, User, Home, LogOut } from 'lucide-react';
 import Button from '../ui/Button';
 import { useAuthStore } from '../../store/authStore';
+import SuccessModal from '../ui/SuccessModal';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const profile = useAuthStore((state) => state.profile);
   const logout = useAuthStore((state) => state.logout);
+  const [showSignoutModal, setShowSignoutModal] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -19,6 +21,7 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
+    setShowSignoutModal(true);
     // Close mobile menu if open
     setIsMenuOpen(false);
   };
@@ -172,6 +175,12 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+      <SuccessModal
+        isOpen={showSignoutModal}
+        onClose={() => setShowSignoutModal(false)}
+        title="Signed Out"
+        message="You have successfully signed out."
+      />
     </nav>
   );
 };

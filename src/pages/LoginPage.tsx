@@ -20,6 +20,10 @@ const LoginPage = () => {
     password: '',
   });
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showIncorrectPasswordModal, setShowIncorrectPasswordModal] =
+    useState(false);
+  const [showAccountNotExistModal, setShowAccountNotExistModal] =
+    useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -37,8 +41,23 @@ const LoginPage = () => {
     try {
       await login(formData.email, formData.password);
       setShowSuccessModal(true);
-    } catch (error) {
-      setError('Invalid email or password. Please try again.');
+    } catch (error: any) {
+      const errorMsg = error?.message || '';
+      if (
+        errorMsg.toLowerCase().includes('invalid login credentials') ||
+        errorMsg.toLowerCase().includes('invalid password') ||
+        errorMsg.toLowerCase().includes('password')
+      ) {
+        setShowIncorrectPasswordModal(true);
+      } else if (
+        errorMsg.toLowerCase().includes('user not found') ||
+        errorMsg.toLowerCase().includes('no user') ||
+        errorMsg.toLowerCase().includes('account')
+      ) {
+        setShowAccountNotExistModal(true);
+      } else {
+        setError('Invalid email or password. Please try again.');
+      }
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -150,6 +169,20 @@ const LoginPage = () => {
         onClose={handleCloseSuccessModal}
         title="Login Successful!"
         message="You have successfully logged in."
+      />
+      <SuccessModal
+        isOpen={showIncorrectPasswordModal}
+        onClose={() => setShowIncorrectPasswordModal(false)}
+        title="Incorrect Password"
+        message="The password you entered is incorrect. Please try again."
+        error
+      />
+      <SuccessModal
+        isOpen={showAccountNotExistModal}
+        onClose={() => setShowAccountNotExistModal(false)}
+        title="Account Doesn't Exist"
+        message="No account found with this email address. Please check your email or sign up."
+        error
       />
     </div>
   );
