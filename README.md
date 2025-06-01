@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Vehicle Rental System
 
 A modern web application for managing vehicle rentals, built with React, TypeScript, and Supabase.
