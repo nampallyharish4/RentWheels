@@ -1,5 +1,29 @@
 # Vehicle Rental System (RentWheels)
 
+## Table of Contents
+
+- [Abstract](#abstract)
+- [Introduction](#introduction)
+- [Literature Review](#literature-review)
+- [Existing System](#existing-system)
+- [Proposed System](#proposed-system)
+- [Software & Hardware Requirements](#software--hardware-requirements)
+- [Algorithms Used](#algorithms-used)
+- [Results](#results)
+- [Conclusion](#conclusion)
+- [Overview](#overview)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Environment Setup](#environment-setup)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Abstract
 
 RentWheels is a comprehensive web-based vehicle rental management system built with modern technologies including React, TypeScript, and Supabase. This project aims to digitize and streamline the vehicle rental process, providing an efficient solution for both rental businesses and customers. The system handles the complete rental lifecycle, from vehicle browsing to booking management and return processing.
@@ -183,21 +207,6 @@ RentWheels successfully addresses the challenges in traditional vehicle rental s
 - Enhanced analytics and reporting features
 - Integration with more payment gateways
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Environment Setup](#environment-setup)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [API Documentation](#api-documentation)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Overview
 
 RentWheels is a full-featured vehicle rental management system designed to streamline the process of renting vehicles. The application provides an intuitive interface for both administrators and customers, making it easy to manage vehicle inventory, handle bookings, and process payments.
@@ -282,7 +291,6 @@ rentwheels/
 │   │   ├── layout/       # Layout components
 │   │   └── vehicles/     # Vehicle-related components
 │   ├── pages/            # Page components
-│   │   ├── admin/        # Admin dashboard pages
 │   │   ├── auth/         # Authentication pages
 │   │   └── public/       # Public pages
 │   ├── hooks/            # Custom React hooks
@@ -367,9 +375,9 @@ rentwheels/
 
 - GET `/vehicles` - List all vehicles
 - GET `/vehicles/:id` - Get vehicle details
-- POST `/vehicles` - Create new vehicle (Admin)
-- PUT `/vehicles/:id` - Update vehicle (Admin)
-- DELETE `/vehicles/:id` - Delete vehicle (Admin)
+- POST `/vehicles` - Create new vehicle
+- PUT `/vehicles/:id` - Update vehicle
+- DELETE `/vehicles/:id` - Delete vehicle
 
 ### Booking Endpoints
 
