@@ -1,196 +1,248 @@
-# Vehicle Rental System
+# Vehicle Rental System (RentWheels)
 
-A modern web application for managing vehicle rentals, built with React, TypeScript, and Supabase.
+A modern web application for managing vehicle rentals, built with React, TypeScript, and Supabase. RentWheels provides a comprehensive solution for vehicle rental businesses to manage their fleet, bookings, and customer interactions.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Detailed Package Installation](#detailed-package-installation)
+- [Environment Setup](#environment-setup)
 - [Project Structure](#project-structure)
-- [Usage](#usage)
-- [Documentation](#documentation)
+- [Development](#development)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-The Vehicle Rental System is a web-based application that provides a seamless interface for managing vehicle rentals. Built with modern technologies, it offers a responsive and user-friendly experience for both administrators and customers.
+RentWheels is a full-featured vehicle rental management system designed to streamline the process of renting vehicles. The application provides an intuitive interface for both administrators and customers, making it easy to manage vehicle inventory, handle bookings, and process payments.
 
 ### Key Features
 
-- User authentication and authorization
-- Vehicle management
-- Booking system
-- Real-time data updates using Supabase
-- Responsive design with Tailwind CSS
+- **User Management**
+
+  - Secure authentication and authorization
+  - User roles (Admin, Staff, Customer)
+  - Profile management
+  - Password recovery
+
+- **Vehicle Management**
+
+  - Comprehensive vehicle catalog
+  - Real-time availability tracking
+  - Vehicle categories and filtering
+  - Maintenance scheduling
+  - Vehicle status updates
+
+- **Booking System**
+
+  - Real-time booking calendar
+  - Automated availability checks
+  - Flexible rental periods
+  - Price calculation
+  - Booking modification and cancellation
+
+- **Admin Dashboard**
+
+  - Fleet overview
+  - Booking management
+  - Revenue analytics
+  - User management
+  - System settings
+
+- **Customer Features**
+  - Easy booking process
+  - Rental history
+  - Favorite vehicles
+  - Reviews and ratings
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- Node.js (v18 or higher)
-- npm (comes with Node.js)
+- Node.js (v18.0.0 or higher)
+- npm (v9.0.0 or higher)
 - Git
+- Supabase account
+- Modern web browser
 
 ## Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone [repository-url]
-   cd vehicle-rental-system
+   git clone https://github.com/yourusername/rentwheels.git
+   cd rentwheels
    ```
 
 2. Install dependencies:
-
    ```bash
    npm install
    ```
 
-3. Set up environment variables:
+## Environment Setup
 
-   - Create a `.env` file in the root directory
-   - Add your Supabase configuration:
-     ```
-     VITE_SUPABASE_URL=your_supabase_url
-     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-     ```
+1. Create a `.env` file in the root directory:
 
-4. Start the development server:
-   ```bash
-   npm run dev
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_API_BASE_URL=your_api_base_url
+   VITE_STRIPE_PUBLIC_KEY=your_stripe_public_key
    ```
 
-### Detailed Package Installation
-
-If you prefer to install packages individually, here are the specific installation commands:
-
-1. Core Dependencies:
-
-   ```bash
-   # React and TypeScript
-   npm install react@^18.3.1 react-dom@^18.3.1
-   npm install -D @types/react@^18.3.5 @types/react-dom@^18.3.0 typescript@^5.5.3
-
-   # Routing
-   npm install react-router-dom@^6.22.3
-
-   # State Management
-   npm install zustand@^4.5.2
-
-   # Backend/Database
-   npm install @supabase/supabase-js@^2.39.8
-
-   # Form Handling
-   npm install react-hook-form@^7.51.0
-
-   # UI and Styling
-   npm install lucide-react@^0.344.0
-   npm install -D tailwindcss@^3.4.1 postcss@^8.4.35 autoprefixer@^10.4.18
-
-   # Date Handling
-   npm install date-fns@^3.5.0
-   ```
-
-2. Development Dependencies:
-
-   ```bash
-   # Build Tools
-   npm install -D vite@^5.4.2 @vitejs/plugin-react@^4.3.1
-
-   # ESLint and TypeScript
-   npm install -D eslint@^9.9.1 @eslint/js@^9.9.1
-   npm install -D eslint-plugin-react-hooks@^5.1.0-rc.0
-   npm install -D eslint-plugin-react-refresh@^0.4.11
-   npm install -D typescript-eslint@^8.3.0
-   npm install -D globals@^15.9.0
-   ```
+2. Configure Supabase:
+   - Set up authentication providers
+   - Create necessary database tables
+   - Configure storage buckets
+   - Set up row level security policies
 
 ## Project Structure
 
 ```
-vehicle-rental-system/
-├── src/                    # Source code
+rentwheels/
+├── src/
 │   ├── components/        # Reusable UI components
+│   │   ├── common/       # Shared components
+│   │   ├── forms/        # Form components
+│   │   ├── layout/       # Layout components
+│   │   └── vehicles/     # Vehicle-related components
 │   ├── pages/            # Page components
-│   ├── store/            # State management (Zustand)
-│   ├── lib/              # Utility functions and configurations
-│   ├── types/            # TypeScript type definitions
+│   │   ├── admin/        # Admin dashboard pages
+│   │   ├── auth/         # Authentication pages
+│   │   └── public/       # Public pages
+│   ├── hooks/            # Custom React hooks
+│   ├── store/            # Zustand state management
+│   ├── lib/              # Utility functions
+│   │   ├── api/         # API client
+│   │   ├── supabase/    # Supabase client
+│   │   └── utils/       # Helper functions
+│   ├── types/            # TypeScript types
+│   ├── styles/           # Global styles
 │   ├── App.tsx           # Main application component
 │   └── main.tsx          # Application entry point
 ├── public/               # Static assets
-├── supabase/            # Supabase configurations
-├── vite.config.ts       # Vite configuration
-├── tailwind.config.js   # Tailwind CSS configuration
-├── tsconfig.json        # TypeScript configuration
-└── package.json         # Project dependencies and scripts
+├── tests/                # Test files
+├── supabase/             # Supabase configurations
+├── config/               # Configuration files
+├── scripts/              # Build and utility scripts
+└── docs/                 # Additional documentation
 ```
 
-## Usage
+## Development
 
-After installation, you can:
-
-1. Run the development server:
+1. Start the development server:
 
    ```bash
    npm run dev
    ```
 
-2. Build for production:
+2. Run tests:
+
+   ```bash
+   npm run test
+   ```
+
+3. Lint code:
+
+   ```bash
+   npm run lint
+   ```
+
+4. Format code:
+   ```bash
+   npm run format
+   ```
+
+## Testing
+
+- Unit tests: `npm run test:unit`
+- Integration tests: `npm run test:integration`
+- E2E tests: `npm run test:e2e`
+- Coverage report: `npm run test:coverage`
+
+## Deployment
+
+1. Build the application:
 
    ```bash
    npm run build
    ```
 
-3. Preview production build:
+2. Preview production build:
 
    ```bash
    npm run preview
    ```
 
-4. Run linting:
-   ```bash
-   npm run lint
-   ```
+3. Deploy to production:
+   - Configure deployment platform (Vercel, Netlify, etc.)
+   - Set up environment variables
+   - Deploy using platform-specific commands
 
-## Documentation
+## API Documentation
 
-### Tech Stack
+### Authentication Endpoints
 
-- **Frontend Framework**: React 18 with TypeScript
-- **Routing**: React Router DOM
-- **State Management**: Zustand
-- **Backend/Database**: Supabase
-- **Styling**: Tailwind CSS
-- **Form Handling**: React Hook Form
-- **Icons**: Lucide React
-- **Date Handling**: date-fns
-- **Build Tool**: Vite
+- POST `/auth/register` - User registration
+- POST `/auth/login` - User login
+- POST `/auth/logout` - User logout
+- POST `/auth/reset-password` - Password reset
 
-### Component Documentation
+### Vehicle Endpoints
 
-The project uses TypeScript for type safety and self-documentation. Component props and interfaces are documented using TypeScript interfaces.
+- GET `/vehicles` - List all vehicles
+- GET `/vehicles/:id` - Get vehicle details
+- POST `/vehicles` - Create new vehicle (Admin)
+- PUT `/vehicles/:id` - Update vehicle (Admin)
+- DELETE `/vehicles/:id` - Delete vehicle (Admin)
 
-### API Documentation
+### Booking Endpoints
 
-API endpoints and database schema documentation can be found in the Supabase dashboard.
+- GET `/bookings` - List user bookings
+- POST `/bookings` - Create new booking
+- PUT `/bookings/:id` - Update booking
+- DELETE `/bookings/:id` - Cancel booking
 
 ## Contributing
 
 1. Fork the repository
-2. Create a new branch (`git checkout -b feature/improvement`)
-3. Make your changes
-4. Commit your changes (`git commit -am 'Add new feature'`)
-5. Push to the branch (`git push origin feature/improvement`)
-6. Create a Pull Request
+2. Create a feature branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m 'Add some feature'
+   ```
+4. Push to the branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+5. Submit a pull request
 
-Please ensure your code follows the existing style and includes appropriate tests.
+### Contribution Guidelines
+
+- Follow the existing code style
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+- Follow the code review process
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-=======
-# RentWheels
->>>>>>> 170fb390ab6608029326c1a717b716771b03847f
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, please:
+
+- Check the [Issues](https://github.com/yourusername/rentwheels/issues) page
+- Join our [Discord community](https://discord.gg/rentwheels)
+- Email support at: support@rentwheels.com
+
+---
+
+© 2024 RentWheels. All rights reserved.

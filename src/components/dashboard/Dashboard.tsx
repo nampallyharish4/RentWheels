@@ -9,6 +9,7 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  XCircle,
 } from 'lucide-react';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
@@ -38,6 +39,7 @@ const Dashboard: React.FC = () => {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [chatBookingId, setChatBookingId] = useState<string | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [showCancelledOrders, setShowCancelledOrders] = useState(false);
 
   console.log('[Dashboard] User listed vehicles:', userListedVehicles);
 
@@ -107,6 +109,9 @@ const Dashboard: React.FC = () => {
   const completedTrips = userBookings.filter(
     (booking) => booking.status === 'completed'
   );
+  const cancelledBookings = userBookings.filter(
+    (booking) => booking.status === 'cancelled'
+  );
 
   // Filter listed vehicles into available and unavailable
   const availableListedVehicles = userListedVehicles.filter(
@@ -114,6 +119,13 @@ const Dashboard: React.FC = () => {
   );
   const unavailableListedVehicles = userListedVehicles.filter(
     (vehicle) => !vehicle.available
+  );
+
+  const activeOrders = ownerBookings.filter(
+    (booking) => booking.status === 'pending' || booking.status === 'confirmed'
+  );
+  const cancelledOrders = ownerBookings.filter(
+    (booking) => booking.status === 'cancelled'
   );
 
   return (
@@ -201,6 +213,24 @@ const Dashboard: React.FC = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
+              <div className="p-3 bg-red-100 rounded-lg">
+                <XCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Cancelled Bookings
+                </h3>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {cancelledBookings.length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Car className="h-6 w-6 text-blue-600" />
               </div>
@@ -270,38 +300,47 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Cancelled Bookings Section as Dropdown */}
-          <div className="mt-10">
+          <div className="mt-10 bg-red-50 rounded-lg p-4">
             <button
-              className="flex items-center w-full text-left focus:outline-none"
+              className="flex items-center w-full text-left focus:outline-none group"
               onClick={() => setShowCancelled((prev) => !prev)}
             >
-              <h2 className="text-xl font-bold text-red-700 flex-1">
-                Cancelled Bookings
-              </h2>
+              <div className="flex-1">
+                <div className="flex items-center">
+                  <h2 className="text-xl font-bold text-red-700">
+                    Cancelled Bookings
+                  </h2>
+                  <span className="ml-3 bg-red-200 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                    {cancelledBookings.length}
+                  </span>
+                </div>
+                <p className="text-sm text-red-600 mt-1">
+                  View your cancelled bookings history
+                </p>
+              </div>
               {showCancelled ? (
-                <ChevronUp className="text-red-700" />
+                <ChevronUp className="text-red-700 group-hover:scale-110 transition-transform" />
               ) : (
-                <ChevronDown className="text-red-700" />
+                <ChevronDown className="text-red-700 group-hover:scale-110 transition-transform" />
               )}
             </button>
             {showCancelled && (
-              <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
                 {bookingsLoading ? (
-                  <p className="col-span-full">Loading cancelled bookings...</p>
-                ) : userBookings.filter((b) => b.status === 'cancelled')
-                    .length > 0 ? (
-                  userBookings
-                    .filter((b) => b.status === 'cancelled')
-                    .map((booking) => (
-                      <BookingCard
-                        key={booking.id}
-                        booking={booking}
-                        onAction={handleBookingAction}
-                        onMessageClick={openChatModal}
-                      />
-                    ))
+                  <p className="col-span-full text-center text-red-600">
+                    Loading cancelled bookings...
+                  </p>
+                ) : cancelledBookings.length > 0 ? (
+                  cancelledBookings.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      onAction={handleBookingAction}
+                      onMessageClick={openChatModal}
+                    />
+                  ))
                 ) : (
-                  <p className="text-gray-600 col-span-full">
+                  <p className="text-red-600 col-span-full text-center">
                     You have no cancelled bookings.
                   </p>
                 )}
@@ -312,28 +351,80 @@ const Dashboard: React.FC = () => {
       )}
 
       {activeTab === 'orders' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <h2 className="text-xl font-bold text-gray-900 col-span-full">
-            Vehicle Requests
-          </h2>
-          {bookingsLoading ? (
-            <p className="col-span-full">Loading orders...</p>
-          ) : ownerBookings.length > 0 ? (
-            ownerBookings.map((booking) => (
-              <BookingCard
-                key={booking.id}
-                booking={booking}
-                isOwnerView={true}
-                onAction={handleBookingAction}
-                onMessageClick={openChatModal}
-              />
-            ))
-          ) : (
-            <p className="text-gray-600">
-              No vehicle requests for your listings.
-            </p>
-          )}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-xl font-bold text-gray-900 col-span-full">
+              Vehicle Requests
+            </h2>
+            {bookingsLoading ? (
+              <p className="col-span-full">Loading orders...</p>
+            ) : activeOrders.length > 0 ? (
+              activeOrders.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  isOwnerView={true}
+                  onAction={handleBookingAction}
+                  onMessageClick={openChatModal}
+                />
+              ))
+            ) : (
+              <p className="text-gray-600">
+                No active vehicle requests for your listings.
+              </p>
+            )}
+          </div>
+
+          {/* Cancelled Orders Section as Dropdown */}
+          <div className="mt-10 bg-red-50 rounded-lg p-4">
+            <button
+              className="flex items-center w-full text-left focus:outline-none group"
+              onClick={() => setShowCancelledOrders((prev) => !prev)}
+            >
+              <div className="flex-1">
+                <div className="flex items-center">
+                  <h2 className="text-xl font-bold text-red-700">
+                    Cancelled Requests
+                  </h2>
+                  <span className="ml-3 bg-red-200 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                    {cancelledOrders.length}
+                  </span>
+                </div>
+                <p className="text-sm text-red-600 mt-1">
+                  View cancelled requests for your vehicles
+                </p>
+              </div>
+              {showCancelledOrders ? (
+                <ChevronUp className="text-red-700 group-hover:scale-110 transition-transform" />
+              ) : (
+                <ChevronDown className="text-red-700 group-hover:scale-110 transition-transform" />
+              )}
+            </button>
+            {showCancelledOrders && (
+              <div className="space-y-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                {bookingsLoading ? (
+                  <p className="col-span-full text-center text-red-600">
+                    Loading cancelled requests...
+                  </p>
+                ) : cancelledOrders.length > 0 ? (
+                  cancelledOrders.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      isOwnerView={true}
+                      onAction={handleBookingAction}
+                      onMessageClick={openChatModal}
+                    />
+                  ))
+                ) : (
+                  <p className="text-red-600 col-span-full text-center">
+                    You have no cancelled vehicle requests.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       <div className="mt-8">

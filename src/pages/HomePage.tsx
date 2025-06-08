@@ -14,6 +14,7 @@ import Card, { CardContent } from '../components/ui/Card';
 import { useVehicleStore } from '../store/vehicleStore';
 import { useAuthStore } from '../store/authStore';
 import { Fade, Slide } from 'react-awesome-reveal';
+import FeedbackSection from '../components/feedback/FeedbackSection';
 
 const HomePage: React.FC = () => {
   const { featuredVehicles, fetchFeaturedVehicles, isLoading } =
@@ -353,6 +354,9 @@ const HomePage: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* Feedback Section */}
+      <FeedbackSection />
 
       {/* Call to Action Section */}
       <section className="py-20 bg-primary-600 text-white text-center">
