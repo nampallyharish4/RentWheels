@@ -11,7 +11,6 @@
 - [Algorithms Used](#algorithms-used)
 - [Results](#results)
 - [Conclusion](#conclusion)
-- [Overview](#overview)
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
@@ -23,6 +22,7 @@
 - [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 - [License](#license)
+- [Support](#support)
 
 ## Abstract
 
@@ -207,39 +207,36 @@ RentWheels successfully addresses the challenges in traditional vehicle rental s
 - Enhanced analytics and reporting features
 - Integration with more payment gateways
 
-## Overview
+## Features
 
-RentWheels is a full-featured vehicle rental management system designed to streamline the process of renting vehicles. The application provides an intuitive interface for both administrators and customers, making it easy to manage vehicle inventory, handle bookings, and process payments.
+### User Management
 
-### Key Features
+- Secure authentication and authorization
+- User profile management
+- Password recovery
 
-- **User Management**
+### Vehicle Management
 
-  - Secure authentication and authorization
-  - User profile management
-  - Password recovery
+- Comprehensive vehicle catalog
+- Real-time availability tracking
+- Vehicle categories and filtering
+- Maintenance scheduling
+- Vehicle status updates
 
-- **Vehicle Management**
+### Booking System
 
-  - Comprehensive vehicle catalog
-  - Real-time availability tracking
-  - Vehicle categories and filtering
-  - Maintenance scheduling
-  - Vehicle status updates
+- Real-time booking calendar
+- Automated availability checks
+- Flexible rental periods
+- Price calculation
+- Booking modification and cancellation
 
-- **Booking System**
+### Customer Features
 
-  - Real-time booking calendar
-  - Automated availability checks
-  - Flexible rental periods
-  - Price calculation
-  - Booking modification and cancellation
-
-- **Customer Features**
-  - Easy booking process
-  - Rental history
-  - Favorite vehicles
-  - Reviews and ratings
+- Easy booking process
+- Rental history
+- Favorite vehicles
+- Reviews and ratings
 
 ## Prerequisites
 
