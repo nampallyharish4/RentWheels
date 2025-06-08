@@ -72,7 +72,6 @@ graph TD
     B --> D[External Services]
     D --> E[Payment Gateway]
     D --> F[Authentication]
-    D --> G[Analytics]
 ```
 
 ### Key Improvements
@@ -80,7 +79,6 @@ graph TD
 - Real-time inventory management
 - Automated booking system
 - Integrated payment processing
-- Advanced analytics dashboard
 - Multi-role user management
 
 ## Software & Hardware Requirements
@@ -170,7 +168,7 @@ Function IsVehicleAvailable(vehicleId, startDate, endDate):
 
 - 50% reduction in booking processing time
 - 30% increase in fleet utilization
-- 40% decrease in administrative overhead
+- 40% decrease in manual processing time
 - 25% increase in customer satisfaction
 
 ## Conclusion
@@ -209,8 +207,7 @@ RentWheels is a full-featured vehicle rental management system designed to strea
 - **User Management**
 
   - Secure authentication and authorization
-  - User roles (Admin, Staff, Customer)
-  - Profile management
+  - User profile management
   - Password recovery
 
 - **Vehicle Management**
@@ -228,14 +225,6 @@ RentWheels is a full-featured vehicle rental management system designed to strea
   - Flexible rental periods
   - Price calculation
   - Booking modification and cancellation
-
-- **Admin Dashboard**
-
-  - Fleet overview
-  - Booking management
-  - Revenue analytics
-  - User management
-  - System settings
 
 - **Customer Features**
   - Easy booking process
