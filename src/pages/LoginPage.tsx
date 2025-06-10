@@ -31,6 +31,8 @@ const LoginPage = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +82,14 @@ const LoginPage = () => {
     console.log('Closing success modal and navigating to dashboard');
     setShowSuccessModal(false);
     navigate('/dashboard');
+  };
+
+  const handleCloseIncorrectPasswordModal = () => {
+    setShowIncorrectPasswordModal(false);
+  };
+
+  const handleCloseAccountNotExistModal = () => {
+    setShowAccountNotExistModal(false);
   };
 
   return (
@@ -190,7 +200,7 @@ const LoginPage = () => {
       {/* Incorrect Password Modal */}
       <SuccessModal
         isOpen={showIncorrectPasswordModal}
-        onClose={() => setShowIncorrectPasswordModal(false)}
+        onClose={handleCloseIncorrectPasswordModal}
         title="Incorrect Password"
         message="The password you entered is incorrect. Please try again."
         error
@@ -199,7 +209,7 @@ const LoginPage = () => {
       {/* Account Not Exist Modal */}
       <SuccessModal
         isOpen={showAccountNotExistModal}
-        onClose={() => setShowAccountNotExistModal(false)}
+        onClose={handleCloseAccountNotExistModal}
         title="Account Doesn't Exist"
         message="No account found with this email address. Please check your email or sign up."
         error
