@@ -37,10 +37,10 @@ export const useAuthStore = create<AuthState>()(
       message: null,
 
       login: async (email: string, password: string) => {
-        try {
-          set({ isLoading: true, error: null, message: null });
-          console.log('Attempting login with:', { email });
+        set({ isLoading: true, error: null, message: null });
+        console.log('Attempting login with:', { email });
 
+        try {
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -54,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
                   'Please confirm your email address before signing in. Check your inbox for the confirmation link.',
                 isLoading: false,
               });
-              return;
+              throw error;
             }
             set({ error: error.message, isLoading: false });
             throw error;
@@ -63,14 +63,16 @@ export const useAuthStore = create<AuthState>()(
           if (data.user) {
             console.log('Login successful, loading profile...');
             await get().loadProfile();
+            console.log('Profile loaded successfully');
             set({ isLoading: false, error: null });
+            // Don't throw here - this is success!
           } else {
             set({ isLoading: false });
           }
         } catch (error) {
           console.error('Login catch block:', error);
           set({ isLoading: false });
-          throw error;
+          throw error; // Only throw if there was actually an error
         }
       },
 

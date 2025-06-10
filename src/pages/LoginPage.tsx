@@ -39,13 +39,15 @@ const LoginPage = () => {
     setError('');
 
     try {
+      console.log('Starting login process...');
       await login(formData.email, formData.password);
-      console.log('Login successful, showing success modal');
+      console.log('Login completed successfully, showing success modal');
       setShowSuccessModal(true);
     } catch (error: any) {
       console.error('Login error in component:', error);
+      
       // Check for Supabase specific error codes first
-      if (error?.code === 'invalid_credentials') {
+      if (error?.code === 'invalid_credentials' || error?.message?.includes('Invalid login credentials')) {
         setShowIncorrectPasswordModal(true);
       } else if (error?.code === 'user_not_found') {
         setShowAccountNotExistModal(true);
