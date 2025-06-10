@@ -66,7 +66,7 @@ const LoginPage = () => {
 
   const handleCloseSuccessModal = () => {
     setShowSuccessModal(false);
-    navigate('/');
+    navigate('/dashboard');
   };
 
   return (
@@ -168,7 +168,7 @@ const LoginPage = () => {
         isOpen={showSuccessModal}
         onClose={handleCloseSuccessModal}
         title="Login Successful!"
-        message="You have successfully logged in."
+        message="Welcome back! You have successfully logged in to your account."
       />
       <SuccessModal
         isOpen={showIncorrectPasswordModal}
