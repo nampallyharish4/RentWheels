@@ -42,21 +42,29 @@ const LoginPage = () => {
       await login(formData.email, formData.password);
       setShowSuccessModal(true);
     } catch (error: any) {
-      const errorMsg = error?.message || '';
-      if (
-        errorMsg.toLowerCase().includes('invalid login credentials') ||
-        errorMsg.toLowerCase().includes('invalid password') ||
-        errorMsg.toLowerCase().includes('password')
-      ) {
+      // Check for Supabase specific error codes first
+      if (error?.code === 'invalid_credentials') {
         setShowIncorrectPasswordModal(true);
-      } else if (
-        errorMsg.toLowerCase().includes('user not found') ||
-        errorMsg.toLowerCase().includes('no user') ||
-        errorMsg.toLowerCase().includes('account')
-      ) {
+      } else if (error?.code === 'user_not_found') {
         setShowAccountNotExistModal(true);
       } else {
-        setError('Invalid email or password. Please try again.');
+        // Fallback to message-based checking for other error formats
+        const errorMsg = error?.message || '';
+        if (
+          errorMsg.toLowerCase().includes('invalid login credentials') ||
+          errorMsg.toLowerCase().includes('invalid password') ||
+          errorMsg.toLowerCase().includes('password')
+        ) {
+          setShowIncorrectPasswordModal(true);
+        } else if (
+          errorMsg.toLowerCase().includes('user not found') ||
+          errorMsg.toLowerCase().includes('no user') ||
+          errorMsg.toLowerCase().includes('account')
+        ) {
+          setShowAccountNotExistModal(true);
+        } else {
+          setError('Invalid email or password. Please try again.');
+        }
       }
       console.error('Login error:', error);
     } finally {
