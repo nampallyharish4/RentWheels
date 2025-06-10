@@ -8,12 +8,15 @@ import Card, {
 } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import { useAuthStore } from '../store/authStore';
+import SuccessModal from '../components/ui/SuccessModal';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { signup } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -51,14 +54,32 @@ const SignupPage = () => {
     }
 
     try {
+      console.log('Starting signup process...');
       await signup(formData.email, formData.password, formData.full_name);
-      navigate('/dashboard');
+      console.log('Signup completed successfully, showing verification modal');
+      
+      // Store the email and show verification modal
+      setUserEmail(formData.email);
+      setShowVerificationModal(true);
     } catch (error) {
+      console.error('Signup error in component:', error);
       setError((error as Error).message);
-      console.error('Signup error:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCloseVerificationModal = () => {
+    setShowVerificationModal(false);
+    // Reset form after successful signup
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      full_name: '',
+    });
+    // Navigate to login page
+    navigate('/login');
   };
 
   return (
@@ -197,6 +218,14 @@ const SignupPage = () => {
           </p>
         </div>
       </div>
+
+      {/* Email Verification Modal */}
+      <SuccessModal
+        isOpen={showVerificationModal}
+        onClose={handleCloseVerificationModal}
+        title="Verify Your Email"
+        message={`We've sent a verification email to ${userEmail}. Please check your inbox and click the verification link to activate your account.`}
+      />
     </div>
   );
 };

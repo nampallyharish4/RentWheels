@@ -89,41 +89,40 @@ export const useAuthStore = create<AuthState>()(
       signup: async (
         email: string,
         password: string,
-        profileData?: { firstName?: string; lastName?: string }
+        fullName?: string
       ) => {
         try {
           set({ isLoading: true, error: null, message: null });
+          console.log('Starting signup process for:', email);
+          
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/verify-email`,
+              emailRedirectTo: `${window.location.origin}/login`,
               data: {
                 email: email,
-                full_name: [profileData?.firstName, profileData?.lastName]
-                  .filter(Boolean)
-                  .join(' '),
+                full_name: fullName || '',
               },
             },
           });
 
           if (error) {
-            set({ error: (error as Error).message, isLoading: false });
+            console.error('Signup error:', error);
+            set({ error: error.message, isLoading: false });
             throw error;
           }
 
-          if (data.user) {
-            // Profile will be created automatically by a trigger on auth.users insert
-            // We don't need to set profile here yet, loadProfile will fetch it after email confirmation
-          }
-
+          console.log('Signup successful:', data);
+          
           set({
-            message:
-              'Registration successful! Please check your email to confirm your account.',
+            message: 'Registration successful! Please check your email to verify your account.',
             isLoading: false,
           });
         } catch (error) {
+          console.error('Signup catch block:', error);
           set({ isLoading: false });
+          throw error;
         }
       },
 
