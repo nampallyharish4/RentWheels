@@ -209,4 +209,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-</SuccessModal>
