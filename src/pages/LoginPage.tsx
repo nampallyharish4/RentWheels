@@ -46,29 +46,30 @@ const LoginPage = () => {
     } catch (error: any) {
       console.error('Login error in component:', error);
       
-      // Check for Supabase specific error codes first
-      if (error?.code === 'invalid_credentials' || error?.message?.includes('Invalid login credentials')) {
+      // Check for Supabase specific error codes and messages
+      const errorMessage = error?.message || '';
+      const errorCode = error?.code || '';
+      
+      if (
+        errorCode === 'invalid_credentials' || 
+        errorMessage.includes('Invalid login credentials') ||
+        errorMessage.includes('invalid_credentials')
+      ) {
         setShowIncorrectPasswordModal(true);
-      } else if (error?.code === 'user_not_found') {
+      } else if (
+        errorCode === 'user_not_found' ||
+        errorMessage.includes('user not found') ||
+        errorMessage.includes('User not found')
+      ) {
         setShowAccountNotExistModal(true);
+      } else if (
+        errorMessage.includes('Email not confirmed') ||
+        errorMessage.includes('email not confirmed')
+      ) {
+        setError('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
       } else {
-        // Fallback to message-based checking for other error formats
-        const errorMsg = error?.message || '';
-        if (
-          errorMsg.toLowerCase().includes('invalid login credentials') ||
-          errorMsg.toLowerCase().includes('invalid password') ||
-          errorMsg.toLowerCase().includes('password')
-        ) {
-          setShowIncorrectPasswordModal(true);
-        } else if (
-          errorMsg.toLowerCase().includes('user not found') ||
-          errorMsg.toLowerCase().includes('no user') ||
-          errorMsg.toLowerCase().includes('account')
-        ) {
-          setShowAccountNotExistModal(true);
-        } else {
-          setError('Invalid email or password. Please try again.');
-        }
+        // Generic error message for other cases
+        setError('Login failed. Please check your credentials and try again.');
       }
     } finally {
       setIsLoading(false);

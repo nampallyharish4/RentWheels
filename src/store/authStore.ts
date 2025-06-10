@@ -53,15 +53,31 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (data.user) {
-            console.log('Login successful, loading profile...');
-            await get().loadProfile();
-            console.log('Profile loaded successfully');
+            console.log('Login successful, user data:', data.user);
+            
+            // Try to load profile, but don't fail if it doesn't exist yet
+            try {
+              await get().loadProfile();
+              console.log('Profile loaded successfully');
+            } catch (profileError) {
+              console.warn('Profile loading failed, but login was successful:', profileError);
+              // Create a basic profile from auth user data
+              set({
+                profile: {
+                  id: data.user.id,
+                  email: data.user.email || email,
+                  full_name: data.user.user_metadata?.full_name || null,
+                  created_at: data.user.created_at,
+                },
+              });
+            }
+            
             set({ isLoading: false, error: null });
-            // Success - don't throw here!
-            return;
+            return; // Success - don't throw here!
           } else {
-            set({ isLoading: false, error: 'Login failed - no user data received' });
-            throw new Error('Login failed - no user data received');
+            const errorMsg = 'Login failed - no user data received';
+            set({ isLoading: false, error: errorMsg });
+            throw new Error(errorMsg);
           }
         } catch (error) {
           console.error('Login catch block:', error);
@@ -160,6 +176,24 @@ export const useAuthStore = create<AuthState>()(
             .single();
 
           if (profileError) {
+            // If profile doesn't exist, create one from auth user data
+            if (profileError.code === 'PGRST116') {
+              console.log('Profile not found, creating from auth user data');
+              const newProfile = {
+                id: authUser.id,
+                email: authUser.email || '',
+                full_name: authUser.user_metadata?.full_name || null,
+                created_at: authUser.created_at,
+              };
+              
+              set({
+                profile: newProfile as UserProfile,
+                error: null,
+                isLoading: false,
+              });
+              return;
+            }
+            
             set({
               profile: null,
               error: profileError.message,
@@ -171,7 +205,12 @@ export const useAuthStore = create<AuthState>()(
 
           // If profile data is successfully fetched
           set({
-            profile: profileData as UserProfile,
+            profile: {
+              id: profileData.id,
+              email: profileData.email,
+              full_name: profileData.full_name || null,
+              created_at: profileData.created_at,
+            } as UserProfile,
             error: null,
             isLoading: false,
           });
