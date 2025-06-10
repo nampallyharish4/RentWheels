@@ -47,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
           });
 
           if (error) {
+            console.error('Supabase auth error:', error);
             if (error.message.includes('Email not confirmed')) {
               set({
                 error:
@@ -55,17 +56,21 @@ export const useAuthStore = create<AuthState>()(
               });
               return;
             }
-            set({ error: (error as Error).message, isLoading: false });
+            set({ error: error.message, isLoading: false });
             throw error;
           }
 
           if (data.user) {
+            console.log('Login successful, loading profile...');
             await get().loadProfile();
+            set({ isLoading: false, error: null });
           } else {
             set({ isLoading: false });
           }
         } catch (error) {
+          console.error('Login catch block:', error);
           set({ isLoading: false });
+          throw error;
         }
       },
 

@@ -40,8 +40,10 @@ const LoginPage = () => {
 
     try {
       await login(formData.email, formData.password);
+      console.log('Login successful, showing success modal');
       setShowSuccessModal(true);
     } catch (error: any) {
+      console.error('Login error in component:', error);
       // Check for Supabase specific error codes first
       if (error?.code === 'invalid_credentials') {
         setShowIncorrectPasswordModal(true);
@@ -66,13 +68,13 @@ const LoginPage = () => {
           setError('Invalid email or password. Please try again.');
         }
       }
-      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCloseSuccessModal = () => {
+    console.log('Closing success modal and navigating to dashboard');
     setShowSuccessModal(false);
     navigate('/dashboard');
   };
