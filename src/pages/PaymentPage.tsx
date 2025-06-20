@@ -21,6 +21,8 @@ const PaymentPage: React.FC = () => {
   const [consentChecked, setConsentChecked] = useState(false);
   const [ownerName, setOwnerName] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [licensePreview, setLicensePreview] = useState<string | null>(null);
 
   // Fetch booking details
   const { currentBooking, fetchBookingById } = useBookingStore();
@@ -82,6 +84,21 @@ const PaymentPage: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handle license file upload
+  const handleLicenseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setLicenseFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLicensePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setLicensePreview(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -242,6 +259,26 @@ const PaymentPage: React.FC = () => {
         <br />
         <strong>Customer:</strong> {customerName || 'N/A'}
       </p>
+      <div className="mt-4">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
+          Upload Driver's License (required):
+        </label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleLicenseChange}
+          className="block text-xs"
+        />
+        {licensePreview && (
+          <div className="mt-2">
+            <img
+              src={licensePreview}
+              alt="License Preview"
+              className="h-24 border rounded shadow"
+            />
+          </div>
+        )}
+      </div>
     </>
   );
 
@@ -324,7 +361,7 @@ const PaymentPage: React.FC = () => {
             <Button
               type="submit"
               className="w-full bg-orange-600 text-white hover:bg-orange-700"
-              disabled={!consentChecked}
+              disabled={!consentChecked || !licenseFile}
             >
               Pay Now
             </Button>
