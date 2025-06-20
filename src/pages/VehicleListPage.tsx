@@ -69,8 +69,12 @@ const VehicleListPage: React.FC = () => {
   };
 
   // Filter vehicles into available and unavailable lists
-  const availableVehicles = userListedVehicles.filter(vehicle => vehicle.available);
-  const unavailableVehicles = userListedVehicles.filter(vehicle => !vehicle.available);
+  const availableVehicles = userListedVehicles.filter(
+    (vehicle) => vehicle.available
+  );
+  const unavailableVehicles = userListedVehicles.filter(
+    (vehicle) => !vehicle.available
+  );
 
   // Custom card renderer for this page, potentially different from dashboard's
   const renderListedVehicleCard = (vehicle: Vehicle) => (
@@ -113,6 +117,54 @@ const VehicleListPage: React.FC = () => {
           >
             {vehicle.available ? 'Available' : 'Unavailable'}
           </span>
+        </div>
+        {/* Specifications Section */}
+        <div className="mt-4 border-t border-secondary-100 pt-4">
+          <h4 className="text-md font-semibold text-primary-700 mb-2 flex items-center gap-2">
+            <Car size={18} className="text-orange-500" /> Specifications
+          </h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div>
+              <span className="text-secondary-500">Make</span>
+              <div className="font-medium text-secondary-900">
+                {vehicle.make}
+              </div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Model</span>
+              <div className="font-medium text-secondary-900">
+                {vehicle.model}
+              </div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Year</span>
+              <div className="font-medium text-secondary-900">
+                {vehicle.year}
+              </div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Category</span>
+              <div className="font-medium text-secondary-900 capitalize">
+                {vehicle.category}
+              </div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Fuel Type</span>
+              <div className="font-medium text-secondary-900">Gasoline</div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Transmission</span>
+              <div className="font-medium text-secondary-900">Automatic</div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Seats</span>
+              <div className="font-medium text-secondary-900">5</div>
+            </div>
+            <div>
+              <span className="text-secondary-500">Doors</span>
+              <div className="font-medium text-secondary-900">4</div>
+            </div>
+          </div>
         </div>
         <div className="mt-4 pt-4 border-t border-secondary-200 flex gap-2">
           <Link to={`/vehicles/edit/${vehicle.id}`} className="flex-1">
@@ -209,7 +261,9 @@ const VehicleListPage: React.FC = () => {
       {/* Display Available Vehicles */}
       {availableVehicles.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-secondary-900 mb-4">Available Vehicles ({availableVehicles.length})</h2>
+          <h2 className="text-2xl font-bold text-secondary-900 mb-4">
+            Available Vehicles ({availableVehicles.length})
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {availableVehicles.map(renderListedVehicleCard)}
           </div>
@@ -218,27 +272,29 @@ const VehicleListPage: React.FC = () => {
 
       {/* Display message if no available vehicles */}
       {userListedVehicles.length > 0 && availableVehicles.length === 0 && (
-         <div className="mb-8 text-secondary-600">
-            No vehicles currently available.
-         </div>
+        <div className="mb-8 text-secondary-600">
+          No vehicles currently available.
+        </div>
       )}
 
       {/* Display Unavailable Vehicles */}
       {unavailableVehicles.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-secondary-900 mb-4">Unavailable Vehicles ({unavailableVehicles.length})</h2>
+          <h2 className="text-2xl font-bold text-secondary-900 mb-4">
+            Unavailable Vehicles ({unavailableVehicles.length})
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {unavailableVehicles.map(renderListedVehicleCard)}
           </div>
         </div>
       )}
 
-       {/* Display message if no unavailable vehicles */}
-       {userListedVehicles.length > 0 && unavailableVehicles.length === 0 && (
-          <div className="mb-8 text-secondary-600">
-             No vehicles currently unavailable.
-          </div>
-       )}
+      {/* Display message if no unavailable vehicles */}
+      {userListedVehicles.length > 0 && unavailableVehicles.length === 0 && (
+        <div className="mb-8 text-secondary-600">
+          No vehicles currently unavailable.
+        </div>
+      )}
 
       <ConfirmationModal
         isOpen={isModalOpen}

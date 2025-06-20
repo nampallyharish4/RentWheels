@@ -13,6 +13,10 @@ export interface Vehicle {
   location: string;
   createdAt: string;
   updatedAt: string;
+  fuelType: string;
+  transmission: string;
+  seats: number;
+  doors: number;
 }
 
 export interface Booking {

@@ -17,6 +17,10 @@ interface VehicleFormData {
   description: string;
   available?: boolean; // Optional, will default to true in store if not set
   type: string;
+  fuelType: string;
+  transmission: string;
+  seats: string;
+  doors: string;
 }
 
 const initialFormData: VehicleFormData = {
@@ -29,6 +33,10 @@ const initialFormData: VehicleFormData = {
   description: '',
   available: true,
   type: '',
+  fuelType: '',
+  transmission: '',
+  seats: '',
+  doors: '',
 };
 
 const AddVehiclePage: React.FC = () => {
@@ -96,6 +104,10 @@ const AddVehiclePage: React.FC = () => {
         // For now, assuming it might be optional or handled by default in Supabase/store
         category: formData.category || 'sedan', // Add category from form, default if not present
         type: formData.type,
+        fuelType: formData.fuelType,
+        transmission: formData.transmission,
+        seats: parseInt(formData.seats, 10),
+        doors: parseInt(formData.doors, 10),
       };
 
       // Remove `price` if `dailyRate` is used, to match Omit<Vehicle, ...>
@@ -279,6 +291,80 @@ const AddVehiclePage: React.FC = () => {
                   required
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                   placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="fuelType"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Fuel Type *
+                </label>
+                <input
+                  type="text"
+                  name="fuelType"
+                  id="fuelType"
+                  value={formData.fuelType}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., Gasoline"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="transmission"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Transmission *
+                </label>
+                <input
+                  type="text"
+                  name="transmission"
+                  id="transmission"
+                  value={formData.transmission}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., Automatic"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="seats"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Seats *
+                </label>
+                <input
+                  type="number"
+                  name="seats"
+                  id="seats"
+                  value={formData.seats}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., 5"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="doors"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Doors *
+                </label>
+                <input
+                  type="number"
+                  name="doors"
+                  id="doors"
+                  value={formData.doors}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="e.g., 4"
                 />
               </div>
             </div>
