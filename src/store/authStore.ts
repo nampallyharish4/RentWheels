@@ -37,76 +37,92 @@ export const useAuthStore = create<AuthState>()(
       message: null,
 
       login: async (email: string, password: string) => {
-        try {
-          set({ isLoading: true, error: null, message: null });
-          console.log('Attempting login with:', { email });
+        set({ isLoading: true, error: null, message: null });
+        console.log('Attempting login with:', { email });
 
+        try {
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
           });
 
           if (error) {
-            if (error.message.includes('Email not confirmed')) {
-              set({
-                error:
-                  'Please confirm your email address before signing in. Check your inbox for the confirmation link.',
-                isLoading: false,
-              });
-              return;
-            }
-            set({ error: (error as Error).message, isLoading: false });
+            console.error('Supabase auth error:', error);
+            set({ error: error.message, isLoading: false });
             throw error;
           }
 
           if (data.user) {
-            await get().loadProfile();
+            console.log('Login successful, user data:', data.user);
+            
+            // Try to load profile, but don't fail if it doesn't exist yet
+            try {
+              await get().loadProfile();
+              console.log('Profile loaded successfully');
+            } catch (profileError) {
+              console.warn('Profile loading failed, but login was successful:', profileError);
+              // Create a basic profile from auth user data
+              set({
+                profile: {
+                  id: data.user.id,
+                  email: data.user.email || email,
+                  full_name: data.user.user_metadata?.full_name || null,
+                  created_at: data.user.created_at,
+                },
+              });
+            }
+            
+            set({ isLoading: false, error: null });
+            return; // Success - don't throw here!
           } else {
-            set({ isLoading: false });
+            const errorMsg = 'Login failed - no user data received';
+            set({ isLoading: false, error: errorMsg });
+            throw new Error(errorMsg);
           }
         } catch (error) {
+          console.error('Login catch block:', error);
           set({ isLoading: false });
+          throw error;
         }
       },
 
       signup: async (
         email: string,
         password: string,
-        profileData?: { firstName?: string; lastName?: string }
+        fullName?: string
       ) => {
         try {
           set({ isLoading: true, error: null, message: null });
+          console.log('Starting signup process for:', email);
+          
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/verify-email`,
+              emailRedirectTo: `${window.location.origin}/login`,
               data: {
                 email: email,
-                full_name: [profileData?.firstName, profileData?.lastName]
-                  .filter(Boolean)
-                  .join(' '),
+                full_name: fullName || '',
               },
             },
           });
 
           if (error) {
-            set({ error: (error as Error).message, isLoading: false });
+            console.error('Signup error:', error);
+            set({ error: error.message, isLoading: false });
             throw error;
           }
 
-          if (data.user) {
-            // Profile will be created automatically by a trigger on auth.users insert
-            // We don't need to set profile here yet, loadProfile will fetch it after email confirmation
-          }
-
+          console.log('Signup successful:', data);
+          
           set({
-            message:
-              'Registration successful! Please check your email to confirm your account.',
+            message: 'Registration successful! Please check your email to verify your account.',
             isLoading: false,
           });
         } catch (error) {
+          console.error('Signup catch block:', error);
           set({ isLoading: false });
+          throw error;
         }
       },
 
@@ -159,6 +175,24 @@ export const useAuthStore = create<AuthState>()(
             .single();
 
           if (profileError) {
+            // If profile doesn't exist, create one from auth user data
+            if (profileError.code === 'PGRST116') {
+              console.log('Profile not found, creating from auth user data');
+              const newProfile = {
+                id: authUser.id,
+                email: authUser.email || '',
+                full_name: authUser.user_metadata?.full_name || null,
+                created_at: authUser.created_at,
+              };
+              
+              set({
+                profile: newProfile as UserProfile,
+                error: null,
+                isLoading: false,
+              });
+              return;
+            }
+            
             set({
               profile: null,
               error: profileError.message,
@@ -170,7 +204,12 @@ export const useAuthStore = create<AuthState>()(
 
           // If profile data is successfully fetched
           set({
-            profile: profileData as UserProfile,
+            profile: {
+              id: profileData.id,
+              email: profileData.email,
+              full_name: profileData.full_name || null,
+              created_at: profileData.created_at,
+            } as UserProfile,
             error: null,
             isLoading: false,
           });
