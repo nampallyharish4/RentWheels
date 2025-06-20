@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CreditCard, Calendar, Lock, Smartphone, Wallet } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { useBookingStore } from '../store/bookingStore';
+import { supabase } from '../lib/supabase';
 
 type PaymentMethod = 'credit' | 'debit' | 'upi';
 
@@ -16,6 +18,63 @@ const PaymentPage: React.FC = () => {
     cvv: '',
     upiId: '',
   });
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [ownerName, setOwnerName] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>('');
+
+  // Fetch booking details
+  const { currentBooking, fetchBookingById } = useBookingStore();
+
+  useEffect(() => {
+    if (bookingId) {
+      fetchBookingById(bookingId);
+    }
+  }, [bookingId, fetchBookingById]);
+
+  // Fetch owner and customer full names when booking/vehicle is loaded
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      // Fetch owner name
+      if (currentBooking?.vehicle?.ownerId) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, first_name, last_name')
+          .eq('id', currentBooking.vehicle.ownerId)
+          .single();
+        if (data) {
+          setOwnerName(
+            data.full_name ||
+              [data.first_name, data.last_name].filter(Boolean).join(' ') ||
+              ''
+          );
+        } else {
+          setOwnerName('');
+        }
+      } else {
+        setOwnerName('');
+      }
+      // Fetch customer name
+      if (currentBooking?.userId) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, first_name, last_name')
+          .eq('id', currentBooking.userId)
+          .single();
+        if (data) {
+          setCustomerName(
+            data.full_name ||
+              [data.first_name, data.last_name].filter(Boolean).join(' ') ||
+              ''
+          );
+        } else {
+          setCustomerName('');
+        }
+      } else {
+        setCustomerName('');
+      }
+    };
+    fetchProfiles();
+  }, [currentBooking?.vehicle?.ownerId, currentBooking?.userId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -155,7 +214,37 @@ const PaymentPage: React.FC = () => {
       </p>
     </div>
   );
-  
+
+  // Consent form legal text
+  const legalText = (
+    <>
+      <p className="text-sm text-gray-700 mb-2">
+        <strong>Consent & Legal Notice:</strong>
+      </p>
+      <ul className="text-xs text-gray-600 mb-2 list-disc pl-5">
+        <li>
+          If the vehicle is not returned on time, the customer will be liable
+          for additional charges and legal action as per the terms and
+          conditions.
+        </li>
+        <li>
+          The vehicle owner reserves the right to initiate legal proceedings,
+          including but not limited to police complaints and civil recovery, if
+          the vehicle is not returned within the agreed period.
+        </li>
+        <li>
+          By proceeding, you acknowledge and accept all legal consequences of
+          failing to return the vehicle on time.
+        </li>
+      </ul>
+      <p className="text-xs text-gray-600 mb-2">
+        <strong>Vehicle Owner:</strong> {ownerName || 'N/A'}
+        <br />
+        <strong>Customer:</strong> {customerName || 'N/A'}
+      </p>
+    </>
+  );
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-card p-6">
@@ -212,6 +301,22 @@ const PaymentPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Consent Form */}
+        <div className="mb-6 border border-yellow-300 bg-yellow-50 rounded p-4">
+          {legalText}
+          <label className="flex items-center mt-2">
+            <input
+              type="checkbox"
+              className="mr-2"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+            />
+            <span className="text-xs text-gray-700">
+              I have read and accept the above consent and legal terms.
+            </span>
+          </label>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {paymentMethod === 'upi' ? renderUPIForm() : renderCardForm()}
 
@@ -219,6 +324,7 @@ const PaymentPage: React.FC = () => {
             <Button
               type="submit"
               className="w-full bg-orange-600 text-white hover:bg-orange-700"
+              disabled={!consentChecked}
             >
               Pay Now
             </Button>
