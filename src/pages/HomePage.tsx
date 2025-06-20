@@ -291,7 +291,7 @@ const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vehiclesToDisplay.map((vehicle) => (
+              {vehiclesToDisplay.slice(0, 3).map((vehicle) => (
                 <Slide direction="up" triggerOnce key={vehicle.id}>
                   <Card className="transition-all duration-300 h-full flex flex-col overflow-hidden">
                     <div className="relative h-48">
