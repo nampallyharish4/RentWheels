@@ -134,8 +134,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const handleCancel = () => {
-    // Add confirmation modal later if needed
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
     cancelBooking(booking.id);
+    setIsCancelModalOpen(false);
   };
 
   const isActionInProgress = isAccepting || isRejecting || storeIsLoading;
@@ -271,6 +275,17 @@ const BookingCard: React.FC<BookingCardProps> = ({
           </div>
         </div>
       </CardContent>
+      <ConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleConfirmCancel}
+        title="Confirm Cancellation"
+        message={`Are you sure you want to cancel this booking for ${
+          booking.vehicle?.make || ''
+        } ${booking.vehicle?.model || ''}? This action cannot be undone.`}
+        confirmText="Yes, Cancel Booking"
+        cancelText="No, Keep Booking"
+      />
     </Card>
   );
 };
