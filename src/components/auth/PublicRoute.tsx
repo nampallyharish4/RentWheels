@@ -11,7 +11,12 @@ const PublicRoute: React.FC = () => {
     return null; // Or a loading spinner
   }
 
-  if (profile) {
+  // Prevent redirect if showSuccessModal or showIncorrectPasswordModal flag is set in location.state
+  if (
+    profile &&
+    !location.state?.showSuccessModal &&
+    !location.state?.showIncorrectPasswordModal
+  ) {
     // Redirect to the page they were trying to access, or dashboard as fallback
     const from = location.state?.from?.pathname || '/dashboard';
     return <Navigate to={from} replace />;

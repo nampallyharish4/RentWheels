@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import Card, {
   CardContent,
@@ -12,6 +12,7 @@ import SuccessModal from '../components/ui/SuccessModal';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,9 +20,13 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showIncorrectPasswordModal, setShowIncorrectPasswordModal] =
-    useState(false);
+  // Use location.state to persist modal state across rerenders
+  const [showSuccessModal, setShowSuccessModal] = useState(
+    location.state?.showSuccessModal || false
+  );
+  const [showIncorrectPasswordModal, setShowIncorrectPasswordModal] = useState(
+    location.state?.showIncorrectPasswordModal || false
+  );
   const [showAccountNotExistModal, setShowAccountNotExistModal] =
     useState(false);
 
@@ -45,19 +50,28 @@ const LoginPage = () => {
       await login(formData.email, formData.password);
       console.log('Login completed successfully, showing success modal');
       setShowSuccessModal(true);
+      // Set location state to prevent PublicRoute redirect
+      navigate(location.pathname, {
+        state: { ...location.state, showSuccessModal: true },
+        replace: true,
+      });
     } catch (error: any) {
       console.error('Login error in component:', error);
-      
+
       // Check for Supabase specific error codes and messages
       const errorMessage = error?.message || '';
       const errorCode = error?.code || '';
-      
+
       if (
-        errorCode === 'invalid_credentials' || 
+        errorCode === 'invalid_credentials' ||
         errorMessage.includes('Invalid login credentials') ||
         errorMessage.includes('invalid_credentials')
       ) {
         setShowIncorrectPasswordModal(true);
+        navigate(location.pathname, {
+          state: { ...location.state, showIncorrectPasswordModal: true },
+          replace: true,
+        });
       } else if (
         errorCode === 'user_not_found' ||
         errorMessage.includes('user not found') ||
@@ -68,7 +82,9 @@ const LoginPage = () => {
         errorMessage.includes('Email not confirmed') ||
         errorMessage.includes('email not confirmed')
       ) {
-        setError('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
+        setError(
+          'Please confirm your email address before signing in. Check your inbox for the confirmation link.'
+        );
       } else {
         // Generic error message for other cases
         setError('Login failed. Please check your credentials and try again.');
@@ -81,11 +97,16 @@ const LoginPage = () => {
   const handleCloseSuccessModal = () => {
     console.log('Closing success modal and navigating to dashboard');
     setShowSuccessModal(false);
-    navigate('/dashboard');
+    // Clear the flag and redirect to dashboard
+    navigate('/dashboard', { state: {} });
   };
 
   const handleCloseIncorrectPasswordModal = () => {
     setShowIncorrectPasswordModal(false);
+    navigate(location.pathname, {
+      state: { ...location.state, showIncorrectPasswordModal: false },
+      replace: true,
+    });
   };
 
   const handleCloseAccountNotExistModal = () => {
@@ -196,7 +217,7 @@ const LoginPage = () => {
         title="Login Successful!"
         message="Welcome back! You have successfully logged in to your account."
       />
-      
+
       {/* Incorrect Password Modal */}
       <SuccessModal
         isOpen={showIncorrectPasswordModal}
@@ -205,7 +226,7 @@ const LoginPage = () => {
         message="The password you entered is incorrect. Please try again."
         error
       />
-      
+
       {/* Account Not Exist Modal */}
       <SuccessModal
         isOpen={showAccountNotExistModal}
